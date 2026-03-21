@@ -726,34 +726,6 @@ export default function WorkoutTracker() {
         {view==="log"&&(
           <div className="fade" style={{display:"flex",flexDirection:"column",gap:14}}>
 
-            {/* Templates */}
-            {templates.length>0&&(
-              <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px"}}>
-                <div style={{fontSize:12,letterSpacing:"0.14em",color:T.dimmer,textTransform:"uppercase",marginBottom:10}}>Load Template</div>
-                <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                  {templates.map(tmpl=>(
-                    <div key={tmpl.id} style={{display:"flex",alignItems:"center",gap:8}}>
-                      <button onClick={()=>loadTemplate(tmpl.id)}
-                        style={{flex:1,padding:"9px 12px",borderRadius:6,cursor:"pointer",fontFamily:"inherit",background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:14,textAlign:"left",outline:"none",transition:"all 0.15s"}}
-                        onMouseEnter={e=>{e.currentTarget.style.borderColor=T.accent;e.currentTarget.style.color=T.accent;}}
-                        onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.textPrimary;}}>
-                        <span style={{marginRight:8,color:T.accent}}>▶</span>{tmpl.name}
-                        <span style={{marginLeft:8,fontSize:11,color:T.muted}}>{tmpl.exercises.length} exercise{tmpl.exercises.length!==1?"s":""}</span>
-                      </button>
-                      <button onClick={()=>deleteTemplate(tmpl.id)}
-                        style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:16,outline:"none",padding:"4px 6px",flexShrink:0}}
-                        onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color=T.dimmest}>✕</button>
-                    </div>
-                  ))}
-                </div>
-                {templateFlash&&(
-                  <div style={{marginTop:8,fontSize:12,color:templateFlash==="saved"?"#22c55e":"#ef4444",letterSpacing:"0.04em"}}>
-                    {templateFlash==="saved"?"✓ Template saved!":"Template deleted."}
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Rest Timer */}
             <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:16}}>
               <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:12}}>REST TIMER</div>
@@ -825,6 +797,34 @@ export default function WorkoutTracker() {
                 onUpdateEx={u=>updateExercise(ex.id,u)}
                 onDeleteEx={()=>deleteExercise(ex.id)}/>
             ))}
+
+            {/* Templates */}
+            {templates.length>0&&(
+              <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px"}}>
+                <div style={{fontSize:12,letterSpacing:"0.14em",color:T.dimmer,textTransform:"uppercase",marginBottom:10}}>Load Template</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {templates.map(tmpl=>(
+                    <div key={tmpl.id} style={{display:"flex",alignItems:"center",gap:8}}>
+                      <button onClick={()=>loadTemplate(tmpl.id)}
+                        style={{flex:1,padding:"9px 12px",borderRadius:6,cursor:"pointer",fontFamily:"inherit",background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:14,textAlign:"left",outline:"none",transition:"all 0.15s"}}
+                        onMouseEnter={e=>{e.currentTarget.style.borderColor=T.accent;e.currentTarget.style.color=T.accent;}}
+                        onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.textPrimary;}}>
+                        <span style={{marginRight:8,color:T.accent}}>▶</span>{tmpl.name}
+                        <span style={{marginLeft:8,fontSize:11,color:T.muted}}>{tmpl.exercises.length} exercise{tmpl.exercises.length!==1?"s":""}</span>
+                      </button>
+                      <button onClick={()=>deleteTemplate(tmpl.id)}
+                        style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:16,outline:"none",padding:"4px 6px",flexShrink:0}}
+                        onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color=T.dimmest}>✕</button>
+                    </div>
+                  ))}
+                </div>
+                {templateFlash&&(
+                  <div style={{marginTop:8,fontSize:12,color:templateFlash==="saved"?"#22c55e":"#ef4444",letterSpacing:"0.04em"}}>
+                    {templateFlash==="saved"?"✓ Template saved!":"Template deleted."}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Action buttons */}
             <div style={{display:"flex",gap:10}}>
