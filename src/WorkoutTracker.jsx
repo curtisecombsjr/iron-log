@@ -19,15 +19,17 @@ const uid = () => Math.random().toString(36).slice(2,9);
 
 const THEMES = {
   void:    { name:"Void",      bg:"#0a0a0f", surface:"#0e0e1a", surfaceDeep:"#0d0d18", border:"#1e1e2e", borderSubtle:"#111", accent:"#a78bfa", accentDim:"#4c1d95", accentDim2:"#5b21b6", accentText:"#e9d5ff", muted:"#444", dimmer:"#333", dimmest:"#252535", timerIdle:"#3d3d5c", timerActive:"#a78bfa", textPrimary:"#e2e8f0", textSecondary:"#666", scrollThumb:"#2a2a3e", selectBg:"#1a1a2e", inputBg:"#161620",
-    fontDisplay:"'Orbitron',sans-serif", fontMono:"'Share Tech Mono',monospace", fontBody:"'Share Tech Mono',monospace" },
+    fontDisplay:"'Orbitron',sans-serif", fontMono:"'Share Tech Mono',monospace", fontBody:"'Share Tech Mono',monospace", isLight:false },
   ember:   { name:"Ember",     bg:"#0f0a08", surface:"#1a100a", surfaceDeep:"#150d08", border:"#2e1a0e", borderSubtle:"#1a0e08", accent:"#fb923c", accentDim:"#7c2d12", accentDim2:"#9a3412", accentText:"#fed7aa", muted:"#4a3020", dimmer:"#3a2010", dimmest:"#2a1a0e", timerIdle:"#5c3010", timerActive:"#fb923c", textPrimary:"#fde8d0", textSecondary:"#6a4030", scrollThumb:"#3e2010", selectBg:"#1a1008", inputBg:"#180e08",
-    fontDisplay:"'Bebas Neue',sans-serif", fontMono:"'DM Mono',monospace", fontBody:"'DM Mono',monospace" },
+    fontDisplay:"'Bebas Neue',sans-serif", fontMono:"'DM Mono',monospace", fontBody:"'DM Mono',monospace", isLight:false },
   arctic:  { name:"Arctic",    bg:"#08100f", surface:"#0d1a18", surfaceDeep:"#0a1614", border:"#1a2e2a", borderSubtle:"#111f1d", accent:"#2dd4bf", accentDim:"#0d4a42", accentDim2:"#0f5c52", accentText:"#99f6e4", muted:"#1e3a36", dimmer:"#162e2a", dimmest:"#122420", timerIdle:"#1a4040", timerActive:"#2dd4bf", textPrimary:"#d0f0ec", textSecondary:"#305050", scrollThumb:"#1e3a36", selectBg:"#0d1a18", inputBg:"#0a1614",
-    fontDisplay:"'Exo 2',sans-serif", fontMono:"'Fira Code',monospace", fontBody:"'Fira Code',monospace" },
+    fontDisplay:"'Exo 2',sans-serif", fontMono:"'Fira Code',monospace", fontBody:"'Fira Code',monospace", isLight:false },
   steel:   { name:"Steel",     bg:"#0a0c10", surface:"#10141c", surfaceDeep:"#0d1018", border:"#1e2430", borderSubtle:"#141820", accent:"#60a5fa", accentDim:"#1e3a6e", accentDim2:"#1e4a8a", accentText:"#bfdbfe", muted:"#2a3448", dimmer:"#1e2838", dimmest:"#182030", timerIdle:"#203050", timerActive:"#60a5fa", textPrimary:"#dce8f8", textSecondary:"#3a5070", scrollThumb:"#2a3a54", selectBg:"#10141c", inputBg:"#0d1018",
-    fontDisplay:"'Rajdhani',sans-serif", fontMono:"'JetBrains Mono',monospace", fontBody:"'JetBrains Mono',monospace" },
+    fontDisplay:"'Rajdhani',sans-serif", fontMono:"'JetBrains Mono',monospace", fontBody:"'JetBrains Mono',monospace", isLight:false },
   rose:    { name:"Rose",      bg:"#100a0d", surface:"#1a0d12", surfaceDeep:"#160a0f", border:"#2e1220", borderSubtle:"#1a0d14", accent:"#f472b6", accentDim:"#6d1a3a", accentDim2:"#8a1a48", accentText:"#fce7f3", muted:"#3a1828", dimmer:"#2a1020", dimmest:"#201018", timerIdle:"#4a1030", timerActive:"#f472b6", textPrimary:"#f8d8e8", textSecondary:"#5a2a3a", scrollThumb:"#3e1828", selectBg:"#1a0d12", inputBg:"#160a0f",
-    fontDisplay:"'Playfair Display',serif", fontMono:"'Courier Prime',monospace", fontBody:"'Courier Prime',monospace" },
+    fontDisplay:"'Playfair Display',serif", fontMono:"'Courier Prime',monospace", fontBody:"'Courier Prime',monospace", isLight:false },
+  light:   { name:"Light",     bg:"#f4f1ec", surface:"#fffefa", surfaceDeep:"#edeae4", border:"#d4cfc7", borderSubtle:"#e8e4dd", accent:"#1a1a2e", accentDim:"#2d2d4a", accentDim2:"#3d3d5c", accentText:"#fffefa", muted:"#8a8478", dimmer:"#6b6560", dimmest:"#c4bfb8", timerIdle:"#9a9490", timerActive:"#1a1a2e", textPrimary:"#1a1714", textSecondary:"#6b6560", scrollThumb:"#c4bfb8", selectBg:"#fffefa", inputBg:"#f4f1ec",
+    fontDisplay:"'Bebas Neue',sans-serif", fontMono:"'DM Mono',monospace", fontBody:"'DM Mono',monospace", isLight:true },
 };
 
 function SetRow({ set, idx, onUpdate, onDelete, T }) {
@@ -111,9 +113,9 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx }) {
             {custom?"preset":"+ custom"}
           </button>
           <button onClick={onDeleteEx}
-            style={{padding:"8px 10px",borderRadius:6,background:"transparent",border:"1px solid #2a1a1a",color:"#6b2424",fontSize:12,cursor:"pointer",transition:"all 0.15s",outline:"none"}}
-            onMouseEnter={e=>{e.currentTarget.style.background="#2a1a1a";e.currentTarget.style.color="#ef4444"}}
-            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="#6b2424"}}>
+            style={{padding:"8px 10px",borderRadius:6,background:"transparent",border:`1px solid ${T.isLight?"#d4b8b8":"#2a1a1a"}`,color:T.isLight?"#b04040":"#6b2424",fontSize:12,cursor:"pointer",transition:"all 0.15s",outline:"none"}}
+            onMouseEnter={e=>{e.currentTarget.style.background=T.isLight?"#fde8e8":"#2a1a1a";e.currentTarget.style.color="#ef4444"}}
+            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.isLight?"#b04040":"#6b2424"}}>
             ✕
           </button>
         </div>
@@ -490,9 +492,16 @@ export default function WorkoutTracker() {
       <div style={{borderBottom:`1px solid ${T.borderSubtle}`,padding:"15px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,background:T.bg,zIndex:10}}>
         <span style={{fontFamily:T.fontDisplay,fontSize:26,letterSpacing:"0.08em",color:T.accent}}>IRON LOG</span>
         <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          {/* Light mode toggle */}
+          <button
+            title={T.isLight ? "Switch to dark" : "Switch to light"}
+            onClick={() => setThemeKey(T.isLight ? "void" : "light")}
+            style={{width:28,height:28,borderRadius:"50%",background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,cursor:"pointer",outline:"none",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s",marginRight:2}}>
+            {T.isLight ? "🌙" : "☀️"}
+          </button>
           {/* Theme dots */}
           <div style={{display:"flex",gap:5,marginRight:6}}>
-            {Object.entries(THEMES).map(([key,th])=>(
+            {Object.entries(THEMES).filter(([key])=>key!=="light").map(([key,th])=>(
               <button key={key} title={th.name} onClick={()=>setThemeKey(key)}
                 style={{width:14,height:14,borderRadius:"50%",background:th.accent,border:themeKey===key?`2px solid ${T.textPrimary}`:"2px solid transparent",cursor:"pointer",outline:"none",transition:"transform 0.15s",transform:themeKey===key?"scale(1.25)":"scale(1)",padding:0}}/>
             ))}
@@ -541,7 +550,7 @@ export default function WorkoutTracker() {
                   </div>
                   <div style={{display:"flex",gap:6}}>
                     <button onClick={timerActive?stopTimer:startTimer}
-                      style={{flex:1,padding:"7px",borderRadius:5,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${timerActive?"#6b2424":T.timerIdle}`,background:timerActive?"#2a1a1a":T.surface,color:timerActive?"#ef4444":T.accent,fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",outline:"none"}}>
+                      style={{flex:1,padding:"7px",borderRadius:5,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${timerActive?(T.isLight?"#d4b8b8":"#6b2424"):T.timerIdle}`,background:timerActive?(T.isLight?"#fde8e8":"#2a1a1a"):T.surface,color:timerActive?"#ef4444":T.accent,fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",outline:"none"}}>
                       {timerActive?"⏹ Stop":timerRem<timerBase&&timerRem>0?"▶ Resume":"▶ Start"}
                     </button>
                     {!timerActive&&<button onClick={()=>{setTimerRem(timerInput);setTimerBase(timerInput);}}
@@ -633,9 +642,9 @@ export default function WorkoutTracker() {
             {sessions.length>0&&(
               <div style={{textAlign:"center",marginTop:16}}>
                 <button onClick={()=>{if(confirm("Clear all history?"))setSessions([]);}}
-                  style={{padding:"8px 20px",borderRadius:6,background:"transparent",border:"1px solid #2a1a1a",color:"#4a1a1a",fontSize:10,letterSpacing:"0.1em",fontFamily:"inherit",cursor:"pointer",transition:"all 0.15s",outline:"none"}}
+                  style={{padding:"8px 20px",borderRadius:6,background:"transparent",border:`1px solid ${T.isLight?"#d4b8b8":"#2a1a1a"}`,color:T.isLight?"#b04040":"#4a1a1a",fontSize:10,letterSpacing:"0.1em",fontFamily:"inherit",cursor:"pointer",transition:"all 0.15s",outline:"none"}}
                   onMouseEnter={e=>{e.currentTarget.style.color="#ef4444";e.currentTarget.style.borderColor="#ef4444"}}
-                  onMouseLeave={e=>{e.currentTarget.style.color="#4a1a1a";e.currentTarget.style.borderColor="#2a1a1a"}}>
+                  onMouseLeave={e=>{e.currentTarget.style.color=T.isLight?"#b04040":"#4a1a1a";e.currentTarget.style.borderColor=T.isLight?"#d4b8b8":"#2a1a1a"}}>
                   CLEAR ALL HISTORY
                 </button>
               </div>
