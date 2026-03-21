@@ -33,19 +33,25 @@ const THEMES = {
 };
 
 function SetRow({ set, idx, onUpdate, onDelete, T }) {
+  const done = !!set.done;
   return (
-    <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.borderSubtle}`}}>
+    <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.borderSubtle}`,opacity:done?0.5:1,transition:"opacity 0.2s"}}>
       <span style={{fontFamily:T.fontDisplay,fontSize:18,color:T.timerIdle,width:20,textAlign:"center"}}>{idx+1}</span>
       <input type="number" value={set.weight} placeholder="lbs"
         onChange={e=>onUpdate({...set,weight:e.target.value})}
-        style={{width:64,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none"}}/>
+        style={{width:64,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none",textDecoration:done?"line-through":"none"}}/>
       <span style={{color:T.dimmer,fontSize:15}}>×</span>
       <input type="number" value={set.reps} placeholder="reps"
         onChange={e=>onUpdate({...set,reps:e.target.value})}
-        style={{width:54,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none"}}/>
+        style={{width:54,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none",textDecoration:done?"line-through":"none"}}/>
       <input value={set.note} placeholder="note"
         onChange={e=>onUpdate({...set,note:e.target.value})}
         style={{flex:1,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.borderSubtle}`,color:T.textSecondary,fontSize:14,fontFamily:"inherit",outline:"none"}}/>
+      <button onClick={()=>onUpdate({...set,done:!done})}
+        style={{width:26,height:26,borderRadius:6,border:`2px solid ${done?T.accent:T.border}`,background:done?T.accent:"transparent",cursor:"pointer",outline:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s",padding:0}}
+        title={done?"Mark incomplete":"Mark complete"}>
+        {done&&<span style={{color:T.isLight?"#fff":T.accentText,fontSize:14,lineHeight:1,fontWeight:"bold"}}>✓</span>}
+      </button>
       <button onClick={onDelete}
         style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:19,lineHeight:1,padding:"0 4px",transition:"color 0.15s"}}
         onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color=T.dimmest}>×</button>
@@ -660,7 +666,7 @@ export default function WorkoutTracker() {
       id:uid(),date:new Date().toISOString(),
       name:workoutName,
       notes:workoutNotes.trim(),
-      exercises:workout.map(e=>({...e,sets:e.sets.filter(s=>s.weight||s.reps)})).filter(e=>e.sets.length>0)
+      exercises:workout.map(e=>({...e,sets:e.sets.filter(s=>s.weight||s.reps).map(({done,...s})=>s)})).filter(e=>e.sets.length>0)
     };
     setSessions(prev=>[session,...prev]);
     setWorkout([]); setWorkoutName(""); setWorkoutNotes("");
