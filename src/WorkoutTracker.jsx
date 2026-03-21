@@ -478,6 +478,10 @@ export default function WorkoutTracker() {
   const [workoutNotes, setWorkoutNotes] = useState("");
   const [sessions, setSessions] = useState(()=>JSON.parse(localStorage.getItem("wl_sessions2")||"[]"));
   const [customExercises, setCustomExercises] = useState(()=>JSON.parse(localStorage.getItem("wl_custom_ex")||"{}"));
+  const [templates, setTemplates] = useState(()=>JSON.parse(localStorage.getItem("wl_templates")||"[]"));
+  const [templateFlash, setTemplateFlash] = useState(null); // 'saved' | 'deleted'
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
   const [saveFlash, setSaveFlash] = useState(null);
   const [restoreMsg, setRestoreMsg] = useState(null); // {type:'success'|'error', text:string}
   const fileInputRef = useRef(null);
@@ -508,7 +512,7 @@ export default function WorkoutTracker() {
   });
 
   const saveBackup = () => {
-    const payload = { sessions, customExercises, exportedAt: new Date().toISOString(), version: 1 };
+    const payload = { sessions, customExercises, templates, exportedAt: new Date().toISOString(), version: 1 };
     const json = JSON.stringify(payload);
     // Encode as base64 for a minimal "zip-like" container
     const b64 = btoa(unescape(encodeURIComponent(json)));
@@ -546,6 +550,13 @@ export default function WorkoutTracker() {
             return merged;
           });
         }
+        if (parsed.templates && Array.isArray(parsed.templates)) {
+          setTemplates(prev => {
+            const existingIds = new Set(prev.map(t=>t.id));
+            const newTemplates = parsed.templates.filter(t=>!existingIds.has(t.id));
+            return [...prev, ...newTemplates];
+          });
+        }
         const n = parsed.sessions.length;
         setRestoreMsg({type:"success", text:`Restored ${n} session${n!==1?"s":""}`});
       } catch(err) {
@@ -566,6 +577,35 @@ export default function WorkoutTracker() {
   useEffect(()=>{localStorage.setItem("wl_sessions2",JSON.stringify(sessions));},[sessions]);
   useEffect(()=>{localStorage.setItem("wl_custom_ex",JSON.stringify(customExercises));},[customExercises]);
   useEffect(()=>{localStorage.setItem("wl_theme",themeKey);},[themeKey]);
+  useEffect(()=>{localStorage.setItem("wl_templates",JSON.stringify(templates));},[templates]);
+
+  const saveTemplate = () => {
+    if(!templateName.trim()||!workout.length) return;
+    const tmpl = {
+      id: uid(),
+      name: templateName.trim(),
+      exercises: workout.map(e=>({muscleGroup:e.muscleGroup,name:e.name,isCustom:e.isCustom}))
+    };
+    setTemplates(prev=>[...prev,tmpl]);
+    setTemplateName("");
+    setShowSaveTemplate(false);
+    setTemplateFlash("saved");
+    setTimeout(()=>setTemplateFlash(null),1800);
+  };
+
+  const loadTemplate = (tmplId) => {
+    const tmpl = templates.find(t=>t.id===tmplId);
+    if(!tmpl) return;
+    setWorkout(tmpl.exercises.map(e=>({...e,id:uid(),sets:[]})));
+    setWorkoutName("");
+    setWorkoutNotes("");
+  };
+
+  const deleteTemplate = (tmplId) => {
+    setTemplates(prev=>prev.filter(t=>t.id!==tmplId));
+    setTemplateFlash("deleted");
+    setTimeout(()=>setTemplateFlash(null),1800);
+  };
 
   useEffect(()=>{
     if(timerActive){
@@ -686,6 +726,34 @@ export default function WorkoutTracker() {
         {view==="log"&&(
           <div className="fade" style={{display:"flex",flexDirection:"column",gap:14}}>
 
+            {/* Templates */}
+            {templates.length>0&&(
+              <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px"}}>
+                <div style={{fontSize:12,letterSpacing:"0.14em",color:T.dimmer,textTransform:"uppercase",marginBottom:10}}>Load Template</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {templates.map(tmpl=>(
+                    <div key={tmpl.id} style={{display:"flex",alignItems:"center",gap:8}}>
+                      <button onClick={()=>loadTemplate(tmpl.id)}
+                        style={{flex:1,padding:"9px 12px",borderRadius:6,cursor:"pointer",fontFamily:"inherit",background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:14,textAlign:"left",outline:"none",transition:"all 0.15s"}}
+                        onMouseEnter={e=>{e.currentTarget.style.borderColor=T.accent;e.currentTarget.style.color=T.accent;}}
+                        onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.textPrimary;}}>
+                        <span style={{marginRight:8,color:T.accent}}>▶</span>{tmpl.name}
+                        <span style={{marginLeft:8,fontSize:11,color:T.muted}}>{tmpl.exercises.length} exercise{tmpl.exercises.length!==1?"s":""}</span>
+                      </button>
+                      <button onClick={()=>deleteTemplate(tmpl.id)}
+                        style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:16,outline:"none",padding:"4px 6px",flexShrink:0}}
+                        onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color=T.dimmest}>✕</button>
+                    </div>
+                  ))}
+                </div>
+                {templateFlash&&(
+                  <div style={{marginTop:8,fontSize:12,color:templateFlash==="saved"?"#22c55e":"#ef4444",letterSpacing:"0.04em"}}>
+                    {templateFlash==="saved"?"✓ Template saved!":"Template deleted."}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Rest Timer */}
             <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:16}}>
               <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:12}}>REST TIMER</div>
@@ -774,6 +842,43 @@ export default function WorkoutTracker() {
                 </button>
               )}
             </div>
+
+            {/* Save as Template */}
+            {workout.length>0&&(
+              <div>
+                {!showSaveTemplate?(
+                  <button onClick={()=>setShowSaveTemplate(true)}
+                    style={{width:"100%",padding:"9px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:"transparent",border:`1px dashed ${T.border}`,color:T.dimmer,fontSize:12,letterSpacing:"0.1em",textTransform:"uppercase",outline:"none",transition:"all 0.15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=T.accent;e.currentTarget.style.color=T.accent;}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.dimmer;}}>
+                    ☆ Save as Template
+                  </button>
+                ):(
+                  <div style={{display:"flex",gap:8}}>
+                    <input
+                      value={templateName}
+                      onChange={e=>setTemplateName(e.target.value)}
+                      onKeyDown={e=>{if(e.key==="Enter")saveTemplate();if(e.key==="Escape"){setShowSaveTemplate(false);setTemplateName("");}}}
+                      placeholder="Template name (e.g. My Push Day)..."
+                      autoFocus
+                      style={{flex:1,padding:"10px 14px",borderRadius:7,background:T.surface,border:`1px solid ${T.accent}`,color:T.textPrimary,fontSize:14,fontFamily:"inherit",outline:"none"}}/>
+                    <button onClick={saveTemplate} disabled={!templateName.trim()}
+                      style={{padding:"10px 16px",borderRadius:7,cursor:templateName.trim()?"pointer":"not-allowed",fontFamily:"inherit",background:templateName.trim()?T.accentDim:"transparent",border:`1px solid ${T.border}`,color:templateName.trim()?T.accentText:T.dimmer,fontSize:13,outline:"none",transition:"all 0.15s"}}>
+                      Save
+                    </button>
+                    <button onClick={()=>{setShowSaveTemplate(false);setTemplateName("");}}
+                      style={{padding:"10px 12px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:"transparent",border:`1px solid ${T.border}`,color:T.muted,fontSize:13,outline:"none"}}>
+                      ✕
+                    </button>
+                  </div>
+                )}
+                {templateFlash&&!showSaveTemplate&&(
+                  <div style={{marginTop:6,fontSize:12,color:templateFlash==="saved"?"#22c55e":"#ef4444",letterSpacing:"0.04em",textAlign:"center"}}>
+                    {templateFlash==="saved"?"✓ Template saved!":"Template deleted."}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
