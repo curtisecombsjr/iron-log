@@ -408,7 +408,7 @@ export default function WorkoutTracker() {
     setDriveMsg("");
     try {
       const payload = { sessions, customExercises, exportedAt: new Date().toISOString() };
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/api/anthropic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -434,7 +434,7 @@ export default function WorkoutTracker() {
     setDriveStatus("restoring");
     setDriveMsg("");
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/api/anthropic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
