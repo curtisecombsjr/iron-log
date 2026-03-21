@@ -702,7 +702,7 @@ export default function WorkoutTracker() {
             {/* Workout name */}
             <div style={{display:"flex",gap:10,alignItems:"center"}}>
               <select value={workoutName} onChange={e=>setWorkoutName(e.target.value)}
-                style={{flex:1,padding:"10px 14px",borderRadius:7,background:T.surface,border:`1px solid ${T.border}`,color:workoutName?T.textPrimary:T.muted,fontSize:16,fontFamily:"inherit",outline:"none",appearance:"none",backgroundImage:"url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")",backgroundRepeat:"no-repeat",backgroundPosition:"right 14px center"}}>
+                style={{flex:1,padding:"10px 14px",borderRadius:7,background:T.surface,border:`1px solid ${T.border}`,color:workoutName?T.textPrimary:T.muted,fontSize:16,fontFamily:"inherit",outline:"none"}}>
                 <option value="" disabled>Select workout type...</option>
                 {["Arm Day","Leg Day","Back Day","Chest Day","Push Day","Pull Day"].map(n=>(
                   <option key={n} value={n}>{n}</option>
