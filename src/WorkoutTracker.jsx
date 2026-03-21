@@ -35,19 +35,19 @@ const THEMES = {
 function SetRow({ set, idx, onUpdate, onDelete, T }) {
   return (
     <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.borderSubtle}`}}>
-      <span style={{fontFamily:T.fontDisplay,fontSize:15,color:T.timerIdle,width:20,textAlign:"center"}}>{idx+1}</span>
+      <span style={{fontFamily:T.fontDisplay,fontSize:18,color:T.timerIdle,width:20,textAlign:"center"}}>{idx+1}</span>
       <input type="number" value={set.weight} placeholder="lbs"
         onChange={e=>onUpdate({...set,weight:e.target.value})}
-        style={{width:64,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:13,textAlign:"center",fontFamily:"inherit",outline:"none"}}/>
-      <span style={{color:T.dimmer,fontSize:12}}>×</span>
+        style={{width:64,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none"}}/>
+      <span style={{color:T.dimmer,fontSize:15}}>×</span>
       <input type="number" value={set.reps} placeholder="reps"
         onChange={e=>onUpdate({...set,reps:e.target.value})}
-        style={{width:54,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:13,textAlign:"center",fontFamily:"inherit",outline:"none"}}/>
+        style={{width:54,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none"}}/>
       <input value={set.note} placeholder="note"
         onChange={e=>onUpdate({...set,note:e.target.value})}
-        style={{flex:1,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.borderSubtle}`,color:T.textSecondary,fontSize:11,fontFamily:"inherit",outline:"none"}}/>
+        style={{flex:1,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.borderSubtle}`,color:T.textSecondary,fontSize:14,fontFamily:"inherit",outline:"none"}}/>
       <button onClick={onDelete}
-        style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:16,lineHeight:1,padding:"0 4px",transition:"color 0.15s"}}
+        style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:19,lineHeight:1,padding:"0 4px",transition:"color 0.15s"}}
         onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color=T.dimmest}>×</button>
     </div>
   );
@@ -86,7 +86,7 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx }) {
         <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
           {MUSCLE_GROUPS.map(g=>(
             <button key={g} onClick={()=>handleMG(g)}
-              style={{padding:"3px 9px",borderRadius:3,fontSize:10,cursor:"pointer",border:`1px solid ${mg===g?MC[g]+"88":T.border}`,background:mg===g?T.surface:"transparent",color:mg===g?MC[g]:T.muted,letterSpacing:"0.05em",fontFamily:"inherit",outline:"none"}}>
+              style={{padding:"3px 9px",borderRadius:3,fontSize:13,cursor:"pointer",border:`1px solid ${mg===g?MC[g]+"88":T.border}`,background:mg===g?T.surface:"transparent",color:mg===g?MC[g]:T.muted,letterSpacing:"0.05em",fontFamily:"inherit",outline:"none"}}>
               {g}
             </button>
           ))}
@@ -94,7 +94,7 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx }) {
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           {!custom?(
             <select value={exName} onChange={e=>handleEx(e.target.value)}
-              style={{flex:1,padding:"8px 10px",borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:12,fontFamily:"inherit",outline:"none"}}>
+              style={{flex:1,padding:"8px 10px",borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:15,fontFamily:"inherit",outline:"none"}}>
               <optgroup label="Presets">
                 {PRESETS[mg].map(p=><option key={p}>{p}</option>)}
               </optgroup>
@@ -106,14 +106,14 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx }) {
             </select>
           ):(
             <input value={customName} onChange={e=>handleCustom(e.target.value)} placeholder="Exercise name..."
-              style={{flex:1,padding:"8px 10px",borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:12,fontFamily:"inherit",outline:"none"}}/>
+              style={{flex:1,padding:"8px 10px",borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:15,fontFamily:"inherit",outline:"none"}}/>
           )}
           <button onClick={toggleCustom}
-            style={{padding:"8px 10px",borderRadius:6,background:custom?T.surface:"transparent",border:`1px solid ${T.border}`,color:custom?T.accent:T.muted,fontSize:10,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",outline:"none"}}>
+            style={{padding:"8px 10px",borderRadius:6,background:custom?T.surface:"transparent",border:`1px solid ${T.border}`,color:custom?T.accent:T.muted,fontSize:13,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",outline:"none"}}>
             {custom?"preset":"+ custom"}
           </button>
           <button onClick={onDeleteEx}
-            style={{padding:"8px 10px",borderRadius:6,background:"transparent",border:`1px solid ${T.isLight?"#d4b8b8":"#2a1a1a"}`,color:T.isLight?"#b04040":"#6b2424",fontSize:12,cursor:"pointer",transition:"all 0.15s",outline:"none"}}
+            style={{padding:"8px 10px",borderRadius:6,background:"transparent",border:`1px solid ${T.isLight?"#d4b8b8":"#2a1a1a"}`,color:T.isLight?"#b04040":"#6b2424",fontSize:15,cursor:"pointer",transition:"all 0.15s",outline:"none"}}
             onMouseEnter={e=>{e.currentTarget.style.background=T.isLight?"#fde8e8":"#2a1a1a";e.currentTarget.style.color="#ef4444"}}
             onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.isLight?"#b04040":"#6b2424"}}>
             ✕
@@ -122,18 +122,18 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx }) {
       </div>
       <div style={{padding:"8px 14px 4px"}}>
         <div style={{display:"flex",gap:8,marginBottom:4}}>
-          <span style={{fontSize:9,color:T.dimmest,width:20}}>#</span>
-          <span style={{fontSize:9,color:T.dimmest,width:64,textAlign:"center",letterSpacing:"0.08em"}}>WEIGHT</span>
-          <span style={{fontSize:9,color:T.dimmest,width:12}}></span>
-          <span style={{fontSize:9,color:T.dimmest,width:54,textAlign:"center",letterSpacing:"0.08em"}}>REPS</span>
-          <span style={{fontSize:9,color:T.dimmest,flex:1,letterSpacing:"0.08em"}}>NOTE</span>
+          <span style={{fontSize:12,color:T.dimmest,width:20}}>#</span>
+          <span style={{fontSize:12,color:T.dimmest,width:64,textAlign:"center",letterSpacing:"0.08em"}}>WEIGHT</span>
+          <span style={{fontSize:12,color:T.dimmest,width:12}}></span>
+          <span style={{fontSize:12,color:T.dimmest,width:54,textAlign:"center",letterSpacing:"0.08em"}}>REPS</span>
+          <span style={{fontSize:12,color:T.dimmest,flex:1,letterSpacing:"0.08em"}}>NOTE</span>
         </div>
-        {ex.sets.length===0&&<div style={{padding:"10px 0",color:T.dimmest,fontSize:11,textAlign:"center",letterSpacing:"0.06em"}}>NO SETS — ADD ONE BELOW</div>}
+        {ex.sets.length===0&&<div style={{padding:"10px 0",color:T.dimmest,fontSize:14,textAlign:"center",letterSpacing:"0.06em"}}>NO SETS — ADD ONE BELOW</div>}
         {ex.sets.map((s,i)=>(
           <SetRow key={s.id} set={s} idx={i} T={T} onUpdate={u=>updateSet(s.id,u)} onDelete={()=>deleteSet(s.id)}/>
         ))}
         <button onClick={addSet}
-          style={{width:"100%",margin:"8px 0",padding:"7px",borderRadius:5,background:"transparent",border:`1px dashed ${T.border}`,color:T.timerIdle,fontSize:11,cursor:"pointer",letterSpacing:"0.08em",fontFamily:"inherit",transition:"all 0.15s",outline:"none"}}
+          style={{width:"100%",margin:"8px 0",padding:"7px",borderRadius:5,background:"transparent",border:`1px dashed ${T.border}`,color:T.timerIdle,fontSize:14,cursor:"pointer",letterSpacing:"0.08em",fontFamily:"inherit",transition:"all 0.15s",outline:"none"}}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=T.accent;e.currentTarget.style.color=T.accent;}}
           onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.timerIdle;}}>
           + ADD SET
@@ -177,7 +177,7 @@ function TrendsView({ sessions, T }) {
   // Generic SVG line chart
   function LineChart({ data, color, yLabel }) {
     if (!data.length) return (
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:160,color:T.dimmest,fontSize:11,letterSpacing:"0.08em"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:160,color:T.dimmest,fontSize:14,letterSpacing:"0.08em"}}>
         NO DATA FOR THIS EXERCISE
       </div>
     );
@@ -215,13 +215,13 @@ function TrendsView({ sessions, T }) {
         {yTickVals.map((v, i) => (
           <g key={i}>
             <line x1={PL} y1={yOf(v)} x2={W-PR} y2={yOf(v)} stroke={T.border} strokeWidth="1" strokeDasharray="3,4"/>
-            <text x={PL-6} y={yOf(v)+4} textAnchor="end" fill={T.dimmer} fontSize="9" fontFamily={T.fontMono}>
+            <text x={PL-6} y={yOf(v)+4} textAnchor="end" fill={T.dimmer} fontSize="12" fontFamily={T.fontMono}>
               {Math.round(v)}
             </text>
           </g>
         ))}
         {/* Y label */}
-        <text x={10} y={H/2} textAnchor="middle" fill={T.muted} fontSize="9" fontFamily={T.fontMono}
+        <text x={10} y={H/2} textAnchor="middle" fill={T.muted} fontSize="12" fontFamily={T.fontMono}
           transform={`rotate(-90,10,${H/2})`}>{yLabel}</text>
         {/* Area fill */}
         <path d={areaPath} fill={`url(#ag-${color.replace('#','')})`}/>
@@ -238,7 +238,7 @@ function TrendsView({ sessions, T }) {
         {xLabels.map((d, i) => {
           const idx = data.indexOf(d);
           return (
-            <text key={i} x={xOf(idx)} y={H - 4} textAnchor="middle" fill={T.dimmer} fontSize="9" fontFamily={T.fontMono}>
+            <text key={i} x={xOf(idx)} y={H - 4} textAnchor="middle" fill={T.dimmer} fontSize="12" fontFamily={T.fontMono}>
               {new Date(d.date).toLocaleDateString("en-US",{month:"short",day:"numeric"})}
             </text>
           );
@@ -250,7 +250,7 @@ function TrendsView({ sessions, T }) {
   // Bar chart for volume
   function BarChart({ data }) {
     if (!data.length) return (
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:160,color:T.dimmest,fontSize:11,letterSpacing:"0.08em"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:160,color:T.dimmest,fontSize:14,letterSpacing:"0.08em"}}>
         NO WORKOUT DATA YET
       </div>
     );
@@ -280,13 +280,13 @@ function TrendsView({ sessions, T }) {
         {yTickVals.map((v, i) => (
           <g key={i}>
             <line x1={PL} y1={yOf(v)} x2={W-PR} y2={yOf(v)} stroke={T.border} strokeWidth="1" strokeDasharray="3,4"/>
-            <text x={PL-6} y={yOf(v)+4} textAnchor="end" fill={T.dimmer} fontSize="9" fontFamily={T.fontMono}>
+            <text x={PL-6} y={yOf(v)+4} textAnchor="end" fill={T.dimmer} fontSize="12" fontFamily={T.fontMono}>
               {fmtK(v)}
             </text>
           </g>
         ))}
         {/* Y label */}
-        <text x={10} y={H/2} textAnchor="middle" fill={T.muted} fontSize="9" fontFamily={T.fontMono}
+        <text x={10} y={H/2} textAnchor="middle" fill={T.muted} fontSize="12" fontFamily={T.fontMono}
           transform={`rotate(-90,10,${H/2})`}>LBS × REPS</text>
         {/* Bars */}
         {data.map((d, i) => {
@@ -299,11 +299,11 @@ function TrendsView({ sessions, T }) {
               <rect x={xOf(i) - barW/2} y={by} width={barW} height={3}
                 fill={MC[d.mg]} rx="2"/>
               {/* Value label on top */}
-              <text x={xOf(i)} y={by - 5} textAnchor="middle" fill={MC[d.mg]} fontSize="9" fontFamily={T.fontMono}>
+              <text x={xOf(i)} y={by - 5} textAnchor="middle" fill={MC[d.mg]} fontSize="12" fontFamily={T.fontMono}>
                 {fmtK(d.total)}
               </text>
               {/* X label */}
-              <text x={xOf(i)} y={H - 4} textAnchor="middle" fill={T.dimmer} fontSize="8.5" fontFamily={T.fontMono}
+              <text x={xOf(i)} y={H - 4} textAnchor="middle" fill={T.dimmer} fontSize="11" fontFamily={T.fontMono}
                 transform={`rotate(-30,${xOf(i)},${H-4})`}>
                 {d.mg}
               </text>
@@ -328,11 +328,11 @@ function TrendsView({ sessions, T }) {
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:20}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10}}>
           <div>
-            <div style={{fontSize:9,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:4}}>STRENGTH PROGRESS</div>
-            <div style={{fontSize:11,color:T.muted}}>Best set weight per session</div>
+            <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:4}}>STRENGTH PROGRESS</div>
+            <div style={{fontSize:14,color:T.muted}}>Best set weight per session</div>
           </div>
           <select value={selectedEx} onChange={e=>setSelectedEx(e.target.value)}
-            style={{padding:"7px 12px",borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:11,fontFamily:"inherit",outline:"none",maxWidth:220}}>
+            style={{padding:"7px 12px",borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:14,fontFamily:"inherit",outline:"none",maxWidth:220}}>
             {allExercises.length === 0
               ? <option>No exercises yet</option>
               : allExercises.map(ex => <option key={ex}>{ex}</option>)
@@ -350,8 +350,8 @@ function TrendsView({ sessions, T }) {
               { label:"SESSIONS", value: strengthData.length, color:T.muted },
             ].map(s => (
               <div key={s.label} style={{background:T.surfaceDeep,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 12px",textAlign:"center"}}>
-                <div style={{fontSize:8,color:T.dimmer,letterSpacing:"0.12em",marginBottom:2}}>{s.label}</div>
-                <div style={{fontSize:13,color:s.color,fontFamily:T.fontDisplay,letterSpacing:"0.05em"}}>{s.value}</div>
+                <div style={{fontSize:11,color:T.dimmer,letterSpacing:"0.12em",marginBottom:2}}>{s.label}</div>
+                <div style={{fontSize:16,color:s.color,fontFamily:T.fontDisplay,letterSpacing:"0.05em"}}>{s.value}</div>
               </div>
             ))}
           </div>
@@ -365,8 +365,8 @@ function TrendsView({ sessions, T }) {
       {/* Volume by Muscle Group */}
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:20}}>
         <div style={{marginBottom:16}}>
-          <div style={{fontSize:9,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:4}}>TOTAL VOLUME</div>
-          <div style={{fontSize:11,color:T.muted}}>Cumulative weight × reps by muscle group</div>
+          <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:4}}>TOTAL VOLUME</div>
+          <div style={{fontSize:14,color:T.muted}}>Cumulative weight × reps by muscle group</div>
         </div>
         {/* Legend */}
         {volumeByMuscle.length > 0 && (
@@ -374,7 +374,7 @@ function TrendsView({ sessions, T }) {
             {volumeByMuscle.map(d=>(
               <div key={d.mg} style={{display:"flex",alignItems:"center",gap:5}}>
                 <div style={{width:8,height:8,borderRadius:"50%",background:MC[d.mg]}}/>
-                <span style={{fontSize:9,color:T.muted,letterSpacing:"0.06em"}}>{d.mg}</span>
+                <span style={{fontSize:12,color:T.muted,letterSpacing:"0.06em"}}>{d.mg}</span>
               </div>
             ))}
           </div>
@@ -492,13 +492,13 @@ export default function WorkoutTracker() {
       <div style={{borderBottom:`1px solid ${T.borderSubtle}`,padding:"12px 20px 0",position:"sticky",top:0,background:T.bg,zIndex:10}}>
         {/* Row 1: Logo + theme controls */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-          <span style={{fontFamily:T.fontDisplay,fontSize:26,letterSpacing:"0.08em",color:T.accent}}>IRON LOG</span>
+          <span style={{fontFamily:T.fontDisplay,fontSize:30,letterSpacing:"0.08em",color:T.accent}}>IRON LOG</span>
           <div style={{display:"flex",gap:6,alignItems:"center"}}>
             {/* Light mode toggle */}
             <button
               title={T.isLight ? "Switch to dark" : "Switch to light"}
               onClick={() => setThemeKey(T.isLight ? "void" : "light")}
-              style={{width:28,height:28,borderRadius:"50%",background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,cursor:"pointer",outline:"none",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
+              style={{width:28,height:28,borderRadius:"50%",background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,cursor:"pointer",outline:"none",fontSize:17,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
               {T.isLight ? "🌙" : "☀️"}
             </button>
             {/* Theme dots */}
@@ -514,7 +514,7 @@ export default function WorkoutTracker() {
         <div style={{display:"flex"}}>
           {[["log","⊕ Workout"],["history",`◫ History (${sessions.length})`],["trends","↗ Trends"]].map(([v,label])=>(
             <button key={v} onClick={()=>setView(v)}
-              style={{flex:1,padding:"8px 4px",borderRadius:0,fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",cursor:"pointer",fontFamily:"inherit",border:"none",borderBottom:`2px solid ${view===v?T.accent:"transparent"}`,background:"transparent",color:view===v?T.accent:T.muted,transition:"all 0.15s",outline:"none"}}>
+              style={{flex:1,padding:"8px 4px",borderRadius:0,fontSize:13,letterSpacing:"0.12em",textTransform:"uppercase",cursor:"pointer",fontFamily:"inherit",border:"none",borderBottom:`2px solid ${view===v?T.accent:"transparent"}`,background:"transparent",color:view===v?T.accent:T.muted,transition:"all 0.15s",outline:"none"}}>
               {label}
             </button>
           ))}
@@ -528,7 +528,7 @@ export default function WorkoutTracker() {
 
             {/* Rest Timer */}
             <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:16}}>
-              <div style={{fontSize:9,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:12}}>REST TIMER</div>
+              <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:12}}>REST TIMER</div>
               <div style={{display:"flex",alignItems:"center",gap:16}}>
                 <div style={{position:"relative",width:72,height:72,flexShrink:0}}>
                   <svg width="72" height="72" style={{transform:"rotate(-90deg)"}}>
@@ -539,7 +539,7 @@ export default function WorkoutTracker() {
                       strokeDasharray={`${2*Math.PI*30}`}
                       strokeDashoffset={`${2*Math.PI*30*(1-timerPct/100)}`}/>
                   </svg>
-                  <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.fontDisplay,fontSize:18,color:timerRem===0?"#ef4444":T.textPrimary}}>
+                  <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.fontDisplay,fontSize:22,color:timerRem===0?"#ef4444":T.textPrimary}}>
                     {fmt(timerActive||timerRem<timerBase?timerRem:timerInput)}
                   </div>
                 </div>
@@ -547,20 +547,20 @@ export default function WorkoutTracker() {
                   <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                     {[45,60,90,120,180].map(s=>(
                       <button key={s} onClick={()=>{setTimerInput(s);if(!timerActive)setTimerRem(s);}}
-                        style={{padding:"4px 9px",borderRadius:4,fontSize:10,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${timerInput===s?T.timerIdle:T.border}`,background:timerInput===s?T.dimmest:"transparent",color:timerInput===s?T.accent:T.muted,outline:"none"}}>
+                        style={{padding:"4px 9px",borderRadius:4,fontSize:13,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${timerInput===s?T.timerIdle:T.border}`,background:timerInput===s?T.dimmest:"transparent",color:timerInput===s?T.accent:T.muted,outline:"none"}}>
                         {s}s
                       </button>
                     ))}
                     <input type="number" value={timerInput} onChange={e=>{const v=Math.max(1,parseInt(e.target.value)||1);setTimerInput(v);if(!timerActive)setTimerRem(v);}}
-                      style={{width:52,padding:"4px 6px",borderRadius:4,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:11,textAlign:"center",fontFamily:"inherit",outline:"none"}}/>
+                      style={{width:52,padding:"4px 6px",borderRadius:4,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:14,textAlign:"center",fontFamily:"inherit",outline:"none"}}/>
                   </div>
                   <div style={{display:"flex",gap:6}}>
                     <button onClick={timerActive?stopTimer:startTimer}
-                      style={{flex:1,padding:"7px",borderRadius:5,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${timerActive?(T.isLight?"#d4b8b8":"#6b2424"):T.timerIdle}`,background:timerActive?(T.isLight?"#fde8e8":"#2a1a1a"):T.surface,color:timerActive?"#ef4444":T.accent,fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",outline:"none"}}>
+                      style={{flex:1,padding:"7px",borderRadius:5,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${timerActive?(T.isLight?"#d4b8b8":"#6b2424"):T.timerIdle}`,background:timerActive?(T.isLight?"#fde8e8":"#2a1a1a"):T.surface,color:timerActive?"#ef4444":T.accent,fontSize:14,letterSpacing:"0.1em",textTransform:"uppercase",outline:"none"}}>
                       {timerActive?"⏹ Stop":timerRem<timerBase&&timerRem>0?"▶ Resume":"▶ Start"}
                     </button>
                     {!timerActive&&<button onClick={()=>{setTimerRem(timerInput);setTimerBase(timerInput);}}
-                      style={{padding:"7px 12px",borderRadius:5,cursor:"pointer",background:"transparent",border:`1px solid ${T.border}`,color:T.muted,fontSize:12,outline:"none"}}>↺</button>}
+                      style={{padding:"7px 12px",borderRadius:5,cursor:"pointer",background:"transparent",border:`1px solid ${T.border}`,color:T.muted,fontSize:15,outline:"none"}}>↺</button>}
                   </div>
                 </div>
               </div>
@@ -569,13 +569,13 @@ export default function WorkoutTracker() {
             {/* Workout name */}
             <div style={{display:"flex",gap:10,alignItems:"center"}}>
               <input value={workoutName} onChange={e=>setWorkoutName(e.target.value)} placeholder="Workout name (e.g. Push Day)..."
-                style={{flex:1,padding:"10px 14px",borderRadius:7,background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:13,fontFamily:"inherit",outline:"none"}}/>
-              {totalSets>0&&<span style={{fontSize:10,color:T.muted,whiteSpace:"nowrap"}}>{totalSets} SET{totalSets!==1?"S":""}</span>}
+                style={{flex:1,padding:"10px 14px",borderRadius:7,background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,fontFamily:"inherit",outline:"none"}}/>
+              {totalSets>0&&<span style={{fontSize:13,color:T.muted,whiteSpace:"nowrap"}}>{totalSets} SET{totalSets!==1?"S":""}</span>}
             </div>
 
             {/* Exercise blocks */}
             {workout.length===0&&(
-              <div style={{textAlign:"center",padding:"32px 0",color:T.border,fontSize:12,letterSpacing:"0.1em",border:`1px dashed ${T.borderSubtle}`,borderRadius:10}}>
+              <div style={{textAlign:"center",padding:"32px 0",color:T.border,fontSize:15,letterSpacing:"0.1em",border:`1px dashed ${T.borderSubtle}`,borderRadius:10}}>
                 ADD AN EXERCISE TO GET STARTED
               </div>
             )}
@@ -590,7 +590,7 @@ export default function WorkoutTracker() {
             {/* Action buttons */}
             <div style={{display:"flex",gap:10}}>
               <button onClick={addExercise}
-                style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:"transparent",border:`1px solid ${T.border}`,color:T.accent,fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",transition:"all 0.15s",outline:"none"}}
+                style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:"transparent",border:`1px solid ${T.border}`,color:T.accent,fontSize:14,letterSpacing:"0.1em",textTransform:"uppercase",transition:"all 0.15s",outline:"none"}}
                 onMouseEnter={e=>e.currentTarget.style.background=T.surface}
                 onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                 + Add Exercise
@@ -598,7 +598,7 @@ export default function WorkoutTracker() {
               {workout.length>0&&(
                 <button onClick={saveSession}
                   className={saveFlash==="success"?"fok":saveFlash==="error"?"ferr":""}
-                  style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:"none",color:T.accentText,fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:500,outline:"none"}}>
+                  style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:"none",color:T.accentText,fontSize:14,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:500,outline:"none"}}>
                   {saveFlash==="success"?"✓ Saved!":saveFlash==="error"?"Add weight & reps first":"Save Workout"}
                 </button>
               )}
@@ -609,34 +609,34 @@ export default function WorkoutTracker() {
         {view==="history"&&(
           <div className="fade">
             {sessions.length===0?(
-              <div style={{textAlign:"center",padding:"60px 0",color:T.border,fontSize:12,letterSpacing:"0.1em"}}>NO SESSIONS LOGGED YET</div>
+              <div style={{textAlign:"center",padding:"60px 0",color:T.border,fontSize:15,letterSpacing:"0.1em"}}>NO SESSIONS LOGGED YET</div>
             ):(
               sessions.map(session=>(
                 <div key={session.id} style={{marginBottom:28}}>
                   <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-                    <span style={{fontFamily:T.fontDisplay,fontSize:20,letterSpacing:"0.06em",color:T.accent}}>{session.name}</span>
-                    <span style={{fontSize:10,color:T.muted}}>{fmtDate(session.date)}</span>
+                    <span style={{fontFamily:T.fontDisplay,fontSize:24,letterSpacing:"0.06em",color:T.accent}}>{session.name}</span>
+                    <span style={{fontSize:13,color:T.muted}}>{fmtDate(session.date)}</span>
                     <div style={{flex:1,height:1,background:T.border}}/>
-                    <span style={{fontSize:9,color:T.dimmer,letterSpacing:"0.1em"}}>{session.exercises.reduce((a,e)=>a+e.sets.length,0)} SETS</span>
+                    <span style={{fontSize:12,color:T.dimmer,letterSpacing:"0.1em"}}>{session.exercises.reduce((a,e)=>a+e.sets.length,0)} SETS</span>
                     <button onClick={()=>deleteSession(session.id)}
-                      style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:14,transition:"color 0.15s",outline:"none"}}
+                      style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:17,transition:"color 0.15s",outline:"none"}}
                       onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color=T.dimmest}>✕</button>
                   </div>
                   {session.exercises.map(ex=>(
                     <div key={ex.id} style={{background:T.surface,border:`1px solid ${MC[ex.muscleGroup]}22`,borderRadius:8,marginBottom:8,overflow:"hidden"}}>
                       <div style={{padding:"8px 14px",background:T.surfaceDeep,display:"flex",alignItems:"center",gap:10,borderBottom:`1px solid ${T.borderSubtle}`}}>
-                        <span style={{fontSize:9,padding:"2px 8px",borderRadius:3,background:MC[ex.muscleGroup]+"22",color:MC[ex.muscleGroup],letterSpacing:"0.08em",textTransform:"uppercase"}}>{ex.muscleGroup}</span>
-                        <span style={{fontSize:13,color:T.textPrimary}}>{ex.name}</span>
-                        <span style={{fontSize:10,color:T.dimmer,marginLeft:"auto"}}>{ex.sets.length} set{ex.sets.length!==1?"s":""}</span>
+                        <span style={{fontSize:12,padding:"2px 8px",borderRadius:3,background:MC[ex.muscleGroup]+"22",color:MC[ex.muscleGroup],letterSpacing:"0.08em",textTransform:"uppercase"}}>{ex.muscleGroup}</span>
+                        <span style={{fontSize:16,color:T.textPrimary}}>{ex.name}</span>
+                        <span style={{fontSize:13,color:T.dimmer,marginLeft:"auto"}}>{ex.sets.length} set{ex.sets.length!==1?"s":""}</span>
                       </div>
                       <div style={{padding:"4px 14px 8px"}}>
                         {ex.sets.map((s,i)=>(
                           <div key={s.id} style={{display:"flex",alignItems:"center",gap:12,padding:"5px 0",borderBottom:i<ex.sets.length-1?`1px solid ${T.borderSubtle}`:"none"}}>
-                            <span style={{fontFamily:T.fontDisplay,fontSize:14,color:T.dimmest,width:18}}>{i+1}</span>
-                            <span style={{fontSize:13,color:T.accent,minWidth:70}}>{s.weight?`${s.weight} lbs`:"—"}</span>
-                            <span style={{fontSize:11,color:T.dimmer}}>×</span>
-                            <span style={{fontSize:13,color:T.textPrimary}}>{s.reps?`${s.reps} reps`:"—"}</span>
-                            {s.note&&<span style={{fontSize:10,color:T.muted,flex:1}}>{s.note}</span>}
+                            <span style={{fontFamily:T.fontDisplay,fontSize:17,color:T.dimmest,width:18}}>{i+1}</span>
+                            <span style={{fontSize:16,color:T.accent,minWidth:70}}>{s.weight?`${s.weight} lbs`:"—"}</span>
+                            <span style={{fontSize:14,color:T.dimmer}}>×</span>
+                            <span style={{fontSize:16,color:T.textPrimary}}>{s.reps?`${s.reps} reps`:"—"}</span>
+                            {s.note&&<span style={{fontSize:13,color:T.muted,flex:1}}>{s.note}</span>}
                           </div>
                         ))}
                       </div>
@@ -648,7 +648,7 @@ export default function WorkoutTracker() {
             {sessions.length>0&&(
               <div style={{textAlign:"center",marginTop:16}}>
                 <button onClick={()=>{if(confirm("Clear all history?"))setSessions([]);}}
-                  style={{padding:"8px 20px",borderRadius:6,background:"transparent",border:`1px solid ${T.isLight?"#d4b8b8":"#2a1a1a"}`,color:T.isLight?"#b04040":"#4a1a1a",fontSize:10,letterSpacing:"0.1em",fontFamily:"inherit",cursor:"pointer",transition:"all 0.15s",outline:"none"}}
+                  style={{padding:"8px 20px",borderRadius:6,background:"transparent",border:`1px solid ${T.isLight?"#d4b8b8":"#2a1a1a"}`,color:T.isLight?"#b04040":"#4a1a1a",fontSize:13,letterSpacing:"0.1em",fontFamily:"inherit",cursor:"pointer",transition:"all 0.15s",outline:"none"}}
                   onMouseEnter={e=>{e.currentTarget.style.color="#ef4444";e.currentTarget.style.borderColor="#ef4444"}}
                   onMouseLeave={e=>{e.currentTarget.style.color=T.isLight?"#b04040":"#4a1a1a";e.currentTarget.style.borderColor=T.isLight?"#d4b8b8":"#2a1a1a"}}>
                   CLEAR ALL HISTORY
