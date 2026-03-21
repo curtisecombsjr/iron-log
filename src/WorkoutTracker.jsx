@@ -482,6 +482,31 @@ export default function WorkoutTracker() {
   const [restoreMsg, setRestoreMsg] = useState(null); // {type:'success'|'error', text:string}
   const fileInputRef = useRef(null);
 
+  const toDateStr = (d) => d.toISOString().slice(0,10);
+  const [histRangeStart, setHistRangeStart] = useState(()=>toDateStr(new Date(Date.now()-6*86400000)));
+  const [histRangeEnd,   setHistRangeEnd]   = useState(()=>toDateStr(new Date()));
+  const [histPreset,     setHistPreset]      = useState("7d");
+
+  const applyHistPreset = (key) => {
+    setHistPreset(key);
+    const end = toDateStr(new Date());
+    const starts = {"7d":6,"30d":29,"90d":89,"1y":364};
+    if(key==="all"){
+      const oldest = sessions.length
+        ? toDateStr(new Date(Math.min(...sessions.map(s=>new Date(s.date)))))
+        : toDateStr(new Date(Date.now()-6*86400000));
+      setHistRangeStart(oldest);
+    } else {
+      setHistRangeStart(toDateStr(new Date(Date.now()-starts[key]*86400000)));
+    }
+    setHistRangeEnd(end);
+  };
+
+  const filteredSessions = sessions.filter(s=>{
+    const d = s.date.slice(0,10);
+    return d >= histRangeStart && d <= histRangeEnd;
+  });
+
   const saveBackup = () => {
     const payload = { sessions, customExercises, exportedAt: new Date().toISOString(), version: 1 };
     const json = JSON.stringify(payload);
@@ -754,10 +779,37 @@ export default function WorkoutTracker() {
 
         {view==="history"&&(
           <div className="fade">
+            {/* Date range picker */}
+            <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 16px",marginBottom:16}}>
+              <div style={{fontSize:12,letterSpacing:"0.14em",color:T.dimmer,textTransform:"uppercase",marginBottom:10}}>Date Range</div>
+              <div style={{display:"flex",gap:6,marginBottom:12}}>
+                {[{key:"7d",label:"7D"},{key:"30d",label:"30D"},{key:"90d",label:"90D"},{key:"1y",label:"1Y"},{key:"all",label:"ALL"}].map(p=>(
+                  <button key={p.key} onClick={()=>applyHistPreset(p.key)}
+                    style={{flex:1,padding:"8px 4px",borderRadius:5,cursor:"pointer",fontFamily:"inherit",
+                      border:`1px solid ${histPreset===p.key?T.accent:T.border}`,
+                      background:histPreset===p.key?T.accentDim:"transparent",
+                      color:histPreset===p.key?T.accentText:T.muted,
+                      fontSize:13,letterSpacing:"0.08em",outline:"none",transition:"all 0.15s"}}>
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <input type="date" value={histRangeStart} onChange={e=>{setHistRangeStart(e.target.value);setHistPreset(null);}}
+                  style={{flex:1,padding:"8px 10px",borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:13,fontFamily:"inherit",outline:"none",colorScheme:T.isLight?"light":"dark"}}/>
+                <span style={{color:T.dimmer,fontSize:14}}>→</span>
+                <input type="date" value={histRangeEnd} onChange={e=>{setHistRangeEnd(e.target.value);setHistPreset(null);}}
+                  style={{flex:1,padding:"8px 10px",borderRadius:6,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:13,fontFamily:"inherit",outline:"none",colorScheme:T.isLight?"light":"dark"}}/>
+              </div>
+              {filteredSessions.length===0&&sessions.length>0&&(
+                <div style={{marginTop:10,fontSize:13,color:T.muted}}>No sessions in this range — try widening it.</div>
+              )}
+            </div>
+
             {sessions.length===0?(
               <div style={{textAlign:"center",padding:"60px 0",color:T.border,fontSize:15,letterSpacing:"0.1em"}}>NO SESSIONS LOGGED YET</div>
-            ):(
-              sessions.map(session=>(
+            ):filteredSessions.length===0?null:(
+              filteredSessions.map(session=>(
                 <div key={session.id} style={{marginBottom:28}}>
                   <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                     <span style={{fontFamily:T.fontDisplay,fontSize:24,letterSpacing:"0.06em",color:T.accent}}>{session.name}</span>
