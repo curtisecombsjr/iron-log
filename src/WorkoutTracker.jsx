@@ -46,7 +46,7 @@ function SetRow({ set, idx, onUpdate, onDelete, T }) {
         style={{width:54,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none",textDecoration:done?"line-through":"none"}}/>
       <input value={set.note} placeholder="note"
         onChange={e=>onUpdate({...set,note:e.target.value})}
-        style={{flex:1,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.borderSubtle}`,color:T.textSecondary,fontSize:14,fontFamily:"inherit",outline:"none"}}/>
+        style={{width:80,minWidth:0,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.borderSubtle}`,color:T.textSecondary,fontSize:14,fontFamily:"inherit",outline:"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}/>
       <button onClick={()=>onUpdate({...set,done:!done})}
         style={{width:26,height:26,borderRadius:6,border:`2px solid ${done?T.accent:T.border}`,background:done?T.accent:"transparent",cursor:"pointer",outline:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s",padding:0}}
         title={done?"Mark incomplete":"Mark complete"}>
@@ -59,7 +59,7 @@ function SetRow({ set, idx, onUpdate, onDelete, T }) {
   );
 }
 
-function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx }) {
+function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSet }) {
   const [mg, setMg] = useState(ex.muscleGroup);
   const [exName, setExName] = useState(ex.name);
   const [custom, setCustom] = useState(ex.isCustom||false);
@@ -82,6 +82,7 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx }) {
   const addSet = () => {
     const last = ex.sets[ex.sets.length - 1];
     sync({sets:[...ex.sets,{id:uid(),weight:last?.weight||"",reps:last?.reps||"",note:""}]});
+    onAddSet?.();
   };
   const updateSet = (id,u) => sync({sets:ex.sets.map(s=>s.id===id?u:s)});
   const deleteSet = (id) => sync({sets:ex.sets.filter(s=>s.id!==id)});
@@ -637,19 +638,30 @@ export default function WorkoutTracker() {
   const beep=()=>{
     try{
       const ctx=new(window.AudioContext||window.webkitAudioContext)();
-      [0,0.18,0.36].forEach(t=>{
+      // Bell sound: sine wave with slow decay
+      const bell=(freq,time,dur,vol)=>{
         const o=ctx.createOscillator(),g=ctx.createGain();
         o.connect(g);g.connect(ctx.destination);
-        o.frequency.value=880;
-        g.gain.setValueAtTime(0.35,ctx.currentTime+t);
-        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+0.14);
-        o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+0.15);
-      });
+        o.type="sine";
+        o.frequency.value=freq;
+        g.gain.setValueAtTime(vol,ctx.currentTime+time);
+        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+time+dur);
+        o.start(ctx.currentTime+time);
+        o.stop(ctx.currentTime+time+dur);
+      };
+      // Two-tone bell: fundamental + overtone
+      bell(880, 0,    1.2, 0.5);
+      bell(1320,0,    0.8, 0.25);
+      bell(880, 0.08, 1.0, 0.2);
     }catch{}
   };
 
   const startTimer=()=>{setTimerBase(timerInput);setTimerRem(timerInput);setTimerActive(true);};
   const stopTimer=()=>{setTimerActive(false);setTimerRem(timerInput);setTimerBase(timerInput);};
+  const restartTimer=()=>{
+    clearInterval(intRef.current);
+    setTimerBase(timerInput);setTimerRem(timerInput);setTimerActive(true);
+  };
 
   const addExercise=()=>setWorkout(prev=>[...prev,{id:uid(),muscleGroup:"Chest",name:PRESETS["Chest"][0],isCustom:false,sets:[]}]);
   const updateExercise=(id,u)=>setWorkout(prev=>prev.map(e=>e.id===id?u:e));
@@ -810,7 +822,8 @@ export default function WorkoutTracker() {
                 customExercises={customExercises}
                 T={T}
                 onUpdateEx={u=>updateExercise(ex.id,u)}
-                onDeleteEx={()=>deleteExercise(ex.id)}/>
+                onDeleteEx={()=>deleteExercise(ex.id)}
+                onAddSet={restartTimer}/>
             ))}
 
             {/* Templates */}
