@@ -576,9 +576,9 @@ export default function WorkoutTracker() {
   };
 
   const [timerActive, setTimerActive] = useState(false);
-  const [timerInput, setTimerInput] = useState(90);
-  const [timerBase, setTimerBase] = useState(90);
-  const [timerRem, setTimerRem] = useState(90);
+  const [timerInput, setTimerInput] = useState(60);
+  const [timerBase, setTimerBase] = useState(60);
+  const [timerRem, setTimerRem] = useState(60);
   const intRef = useRef(null);
 
   useEffect(()=>{localStorage.setItem("wl_sessions2",JSON.stringify(sessions));},[sessions]);
@@ -659,8 +659,22 @@ export default function WorkoutTracker() {
   const startTimer=()=>{setTimerBase(timerInput);setTimerRem(timerInput);setTimerActive(true);};
   const stopTimer=()=>{setTimerActive(false);setTimerRem(timerInput);setTimerBase(timerInput);};
   const restartTimer=()=>{
+    // Clear any existing interval directly
     clearInterval(intRef.current);
-    setTimerBase(timerInput);setTimerRem(timerInput);setTimerActive(true);
+    // Reset time
+    setTimerBase(timerInput);
+    setTimerRem(timerInput);
+    // If already active, restart interval manually since setTimerActive(true) won't re-trigger useEffect
+    if(timerActive){
+      intRef.current=setInterval(()=>{
+        setTimerRem(r=>{
+          if(r<=1){clearInterval(intRef.current);setTimerActive(false);beep();return 0;}
+          return r-1;
+        });
+      },1000);
+    } else {
+      setTimerActive(true);
+    }
   };
 
   const addExercise=()=>setWorkout(prev=>[...prev,{id:uid(),muscleGroup:"Chest",name:PRESETS["Chest"][0],isCustom:false,sets:[]}]);
