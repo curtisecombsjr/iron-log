@@ -579,6 +579,7 @@ export default function WorkoutTracker() {
   const saveSession=()=>{
     const valid=workout.some(e=>e.sets.some(s=>s.weight&&s.reps));
     if(!valid){setSaveFlash("error");setTimeout(()=>setSaveFlash(null),900);return;}
+    if(!workoutName){setSaveFlash("noname");setTimeout(()=>setSaveFlash(null),900);return;}
     // Persist any new custom exercise names per muscle group
     const newCustom={...customExercises};
     workout.forEach(e=>{
@@ -591,7 +592,7 @@ export default function WorkoutTracker() {
     setCustomExercises(newCustom);
     const session={
       id:uid(),date:new Date().toISOString(),
-      name:workoutName.trim()||"Workout",
+      name:workoutName,
       exercises:workout.map(e=>({...e,sets:e.sets.filter(s=>s.weight||s.reps)})).filter(e=>e.sets.length>0)
     };
     setSessions(prev=>[session,...prev]);
@@ -700,8 +701,13 @@ export default function WorkoutTracker() {
 
             {/* Workout name */}
             <div style={{display:"flex",gap:10,alignItems:"center"}}>
-              <input value={workoutName} onChange={e=>setWorkoutName(e.target.value)} placeholder="Workout name (e.g. Push Day)..."
-                style={{flex:1,padding:"10px 14px",borderRadius:7,background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,fontFamily:"inherit",outline:"none"}}/>
+              <select value={workoutName} onChange={e=>setWorkoutName(e.target.value)}
+                style={{flex:1,padding:"10px 14px",borderRadius:7,background:T.surface,border:`1px solid ${T.border}`,color:workoutName?T.textPrimary:T.muted,fontSize:16,fontFamily:"inherit",outline:"none",appearance:"none",backgroundImage:"url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")",backgroundRepeat:"no-repeat",backgroundPosition:"right 14px center"}}>
+                <option value="" disabled>Select workout type...</option>
+                {["Arm Day","Leg Day","Back Day","Chest Day","Push Day","Pull Day"].map(n=>(
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
               {totalSets>0&&<span style={{fontSize:13,color:T.muted,whiteSpace:"nowrap"}}>{totalSets} SET{totalSets!==1?"S":""}</span>}
             </div>
 
@@ -731,7 +737,7 @@ export default function WorkoutTracker() {
                 <button onClick={saveSession}
                   className={saveFlash==="success"?"fok":saveFlash==="error"?"ferr":""}
                   style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:"none",color:T.accentText,fontSize:14,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:500,outline:"none"}}>
-                  {saveFlash==="success"?"✓ Saved!":saveFlash==="error"?"Add weight & reps first":"Save Workout"}
+                  {saveFlash==="success"?"✓ Saved!":saveFlash==="error"?"Add weight & reps first":saveFlash==="noname"?"Select a workout type":"Save Workout"}
                 </button>
               )}
             </div>
