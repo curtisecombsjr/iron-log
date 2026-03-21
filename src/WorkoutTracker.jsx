@@ -475,6 +475,7 @@ export default function WorkoutTracker() {
   const T = THEMES[themeKey]||THEMES.void;
   const [workout, setWorkout] = useState([]);
   const [workoutName, setWorkoutName] = useState("");
+  const [workoutNotes, setWorkoutNotes] = useState("");
   const [sessions, setSessions] = useState(()=>JSON.parse(localStorage.getItem("wl_sessions2")||"[]"));
   const [customExercises, setCustomExercises] = useState(()=>JSON.parse(localStorage.getItem("wl_custom_ex")||"{}"));
   const [saveFlash, setSaveFlash] = useState(null);
@@ -593,10 +594,11 @@ export default function WorkoutTracker() {
     const session={
       id:uid(),date:new Date().toISOString(),
       name:workoutName,
+      notes:workoutNotes.trim(),
       exercises:workout.map(e=>({...e,sets:e.sets.filter(s=>s.weight||s.reps)})).filter(e=>e.sets.length>0)
     };
     setSessions(prev=>[session,...prev]);
-    setWorkout([]); setWorkoutName("");
+    setWorkout([]); setWorkoutName(""); setWorkoutNotes("");
     setSaveFlash("success"); setTimeout(()=>setSaveFlash(null),800);
     setView("history");
   };
@@ -711,6 +713,12 @@ export default function WorkoutTracker() {
               {totalSets>0&&<span style={{fontSize:13,color:T.muted,whiteSpace:"nowrap"}}>{totalSets} SET{totalSets!==1?"S":""}</span>}
             </div>
 
+            {/* Workout notes */}
+            <textarea value={workoutNotes} onChange={e=>setWorkoutNotes(e.target.value)}
+              placeholder="Session notes (how you felt, PRs, anything worth remembering...)"
+              rows={3}
+              style={{width:"100%",padding:"10px 14px",borderRadius:7,background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical",lineHeight:1.5}}/>
+
             {/* Exercise blocks */}
             {workout.length===0&&(
               <div style={{textAlign:"center",padding:"32px 0",color:T.border,fontSize:15,letterSpacing:"0.1em",border:`1px dashed ${T.borderSubtle}`,borderRadius:10}}>
@@ -760,6 +768,11 @@ export default function WorkoutTracker() {
                       style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:17,transition:"color 0.15s",outline:"none"}}
                       onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color=T.dimmest}>✕</button>
                   </div>
+                  {session.notes&&(
+                    <div style={{padding:"8px 12px",marginBottom:8,borderRadius:7,background:T.surface,border:`1px solid ${T.borderSubtle}`,fontSize:13,color:T.textSecondary,lineHeight:1.6,fontStyle:"italic"}}>
+                      {session.notes}
+                    </div>
+                  )}
                   {session.exercises.map(ex=>(
                     <div key={ex.id} style={{background:T.surface,border:`1px solid ${MC[ex.muscleGroup]}22`,borderRadius:8,marginBottom:8,overflow:"hidden"}}>
                       <div style={{padding:"8px 14px",background:T.surfaceDeep,display:"flex",alignItems:"center",gap:10,borderBottom:`1px solid ${T.borderSubtle}`}}>
