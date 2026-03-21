@@ -590,7 +590,12 @@ export default function WorkoutTracker() {
     const tmpl = {
       id: uid(),
       name: templateName.trim(),
-      exercises: workout.map(e=>({muscleGroup:e.muscleGroup,name:e.name,isCustom:e.isCustom}))
+      exercises: workout.map(e=>({
+        muscleGroup:e.muscleGroup,
+        name:e.name,
+        isCustom:e.isCustom,
+        setCount:Math.max(e.sets.length, 1)
+      }))
     };
     setTemplates(prev=>[...prev,tmpl]);
     setTemplateName("");
@@ -602,7 +607,11 @@ export default function WorkoutTracker() {
   const loadTemplate = (tmplId) => {
     const tmpl = templates.find(t=>t.id===tmplId);
     if(!tmpl) return;
-    setWorkout(tmpl.exercises.map(e=>({...e,id:uid(),sets:[]})));
+    setWorkout(tmpl.exercises.map(e=>({
+      ...e,
+      id:uid(),
+      sets:Array.from({length:e.setCount||1},()=>({id:uid(),weight:"",reps:"",note:""}))
+    })));
     setWorkoutName("");
     setWorkoutNotes("");
   };
