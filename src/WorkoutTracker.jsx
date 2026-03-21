@@ -471,7 +471,7 @@ function TrendsView({ sessions, T }) {
 
 export default function WorkoutTracker() {
   const [view, setView] = useState("log");
-  const [themeKey, setThemeKey] = useState(()=>localStorage.getItem("wl_theme")||"void");
+  const [themeKey, setThemeKey] = useState(()=>localStorage.getItem("wl_theme")||"light");
   const T = THEMES[themeKey]||THEMES.void;
   const [workout, setWorkout] = useState([]);
   const [workoutName, setWorkoutName] = useState("");
