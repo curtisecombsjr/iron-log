@@ -398,6 +398,81 @@ export default function WorkoutTracker() {
   const [sessions, setSessions] = useState(()=>JSON.parse(localStorage.getItem("wl_sessions2")||"[]"));
   const [customExercises, setCustomExercises] = useState(()=>JSON.parse(localStorage.getItem("wl_custom_ex")||"{}"));
   const [saveFlash, setSaveFlash] = useState(null);
+  const [driveStatus, setDriveStatus] = useState(null);
+  const [driveMsg, setDriveMsg] = useState("");
+
+  const BACKUP_FILENAME = "iron-log-backup.json";
+
+  const driveBackup = async () => {
+    setDriveStatus("backing-up");
+    setDriveMsg("");
+    try {
+      const payload = { sessions, customExercises, exportedAt: new Date().toISOString() };
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          mcp_servers: [{ type: "url", url: "https://gdrive.mcp.claude.com/mcp", name: "gdrive" }],
+          messages: [{ role: "user", content: `Save this JSON to a file called "${BACKUP_FILENAME}" in the root of Google Drive, overwriting if it already exists. Just do it, no explanation needed. Here is the content:\n\n${JSON.stringify(payload)}` }],
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error?.message || "API error");
+      setDriveStatus("success-backup");
+      setDriveMsg(`Backed up ${sessions.length} session${sessions.length!==1?"s":""}`);
+    } catch (e) {
+      setDriveStatus("error");
+      setDriveMsg(e.message || "Backup failed");
+    }
+    setTimeout(() => setDriveStatus(null), 4000);
+  };
+
+  const driveRestore = async () => {
+    if (!confirm("Restore from Google Drive? This will merge with your current history.")) return;
+    setDriveStatus("restoring");
+    setDriveMsg("");
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 8000,
+          mcp_servers: [{ type: "url", url: "https://gdrive.mcp.claude.com/mcp", name: "gdrive" }],
+          messages: [{ role: "user", content: `Find the file called "${BACKUP_FILENAME}" in Google Drive and return ONLY its raw JSON content, nothing else — no explanation, no markdown, no code fences. Just the raw JSON string.` }],
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error?.message || "API error");
+      const text = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+      const clean = text.replace(/```json|```/g,"").trim();
+      const parsed = JSON.parse(clean);
+      if (!parsed.sessions || !Array.isArray(parsed.sessions)) throw new Error("Invalid backup file");
+      setSessions(prev => {
+        const existingIds = new Set(prev.map(s=>s.id));
+        const newSessions = parsed.sessions.filter(s=>!existingIds.has(s.id));
+        return [...prev, ...newSessions].sort((a,b)=>new Date(b.date)-new Date(a.date));
+      });
+      if (parsed.customExercises) {
+        setCustomExercises(prev => {
+          const merged = {...prev};
+          Object.entries(parsed.customExercises).forEach(([mg, exs]) => {
+            merged[mg] = [...new Set([...(merged[mg]||[]), ...exs])];
+          });
+          return merged;
+        });
+      }
+      const newCount = parsed.sessions.length;
+      setDriveStatus("success-restore");
+      setDriveMsg(`Restored ${newCount} session${newCount!==1?"s":""}`);
+    } catch (e) {
+      setDriveStatus("error");
+      setDriveMsg(e.message || "Restore failed. Is the backup file in Drive?");
+    }
+    setTimeout(() => setDriveStatus(null), 4000);
+  };
 
   const [timerActive, setTimerActive] = useState(false);
   const [timerInput, setTimerInput] = useState(90);
@@ -645,6 +720,28 @@ export default function WorkoutTracker() {
                 </div>
               ))
             )}
+            {/* Drive backup / restore — always visible */}
+            <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"16px 18px",marginTop:24}}>
+              <div style={{fontSize:12,letterSpacing:"0.14em",color:T.dimmer,textTransform:"uppercase",marginBottom:12}}>Google Drive Backup</div>
+              <div style={{display:"flex",gap:10,marginBottom:driveMsg?10:0}}>
+                <button onClick={driveBackup} disabled={!!driveStatus}
+                  style={{flex:1,padding:"11px",borderRadius:7,cursor:driveStatus?"not-allowed":"pointer",fontFamily:"inherit",background:driveStatus==="success-backup"?T.accentDim:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:"none",color:T.accentText,fontSize:13,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:500,outline:"none",opacity:driveStatus&&driveStatus!=="success-backup"?0.6:1,transition:"all 0.2s"}}>
+                  {driveStatus==="backing-up"?"⏳ Saving…":driveStatus==="success-backup"?"✓ Backed Up":"☁ Back Up"}
+                </button>
+                <button onClick={driveRestore} disabled={!!driveStatus}
+                  style={{flex:1,padding:"11px",borderRadius:7,cursor:driveStatus?"not-allowed":"pointer",fontFamily:"inherit",background:"transparent",border:`1px solid ${T.border}`,color:driveStatus==="success-restore"?"#22c55e":T.accent,fontSize:13,letterSpacing:"0.08em",textTransform:"uppercase",outline:"none",opacity:driveStatus&&driveStatus!=="success-restore"?0.6:1,transition:"all 0.2s"}}>
+                  {driveStatus==="restoring"?"⏳ Restoring…":driveStatus==="success-restore"?"✓ Restored":"↓ Restore"}
+                </button>
+              </div>
+              {driveMsg&&(
+                <div style={{fontSize:13,color:driveStatus==="error"?"#ef4444":"#22c55e",letterSpacing:"0.04em",paddingTop:4}}>
+                  {driveStatus==="error"?"⚠ ":""}{driveMsg}
+                </div>
+              )}
+              <div style={{fontSize:12,color:T.dimmer,marginTop:10,lineHeight:1.5}}>
+                Saves to <span style={{color:T.muted}}>iron-log-backup.json</span> in your Google Drive. Restore merges with existing history.
+              </div>
+            </div>
             {sessions.length>0&&(
               <div style={{textAlign:"center",marginTop:16}}>
                 <button onClick={()=>{if(confirm("Clear all history?"))setSessions([]);}}
