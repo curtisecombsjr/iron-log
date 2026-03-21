@@ -489,26 +489,32 @@ export default function WorkoutTracker() {
       `}</style>
 
       {/* Header */}
-      <div style={{borderBottom:`1px solid ${T.borderSubtle}`,padding:"15px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,background:T.bg,zIndex:10}}>
-        <span style={{fontFamily:T.fontDisplay,fontSize:26,letterSpacing:"0.08em",color:T.accent}}>IRON LOG</span>
-        <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          {/* Light mode toggle */}
-          <button
-            title={T.isLight ? "Switch to dark" : "Switch to light"}
-            onClick={() => setThemeKey(T.isLight ? "void" : "light")}
-            style={{width:28,height:28,borderRadius:"50%",background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,cursor:"pointer",outline:"none",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s",marginRight:2}}>
-            {T.isLight ? "🌙" : "☀️"}
-          </button>
-          {/* Theme dots */}
-          <div style={{display:"flex",gap:5,marginRight:6}}>
-            {Object.entries(THEMES).filter(([key])=>key!=="light").map(([key,th])=>(
-              <button key={key} title={th.name} onClick={()=>setThemeKey(key)}
-                style={{width:14,height:14,borderRadius:"50%",background:th.accent,border:themeKey===key?`2px solid ${T.textPrimary}`:"2px solid transparent",cursor:"pointer",outline:"none",transition:"transform 0.15s",transform:themeKey===key?"scale(1.25)":"scale(1)",padding:0}}/>
-            ))}
+      <div style={{borderBottom:`1px solid ${T.borderSubtle}`,padding:"12px 20px 0",position:"sticky",top:0,background:T.bg,zIndex:10}}>
+        {/* Row 1: Logo + theme controls */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+          <span style={{fontFamily:T.fontDisplay,fontSize:26,letterSpacing:"0.08em",color:T.accent}}>IRON LOG</span>
+          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+            {/* Light mode toggle */}
+            <button
+              title={T.isLight ? "Switch to dark" : "Switch to light"}
+              onClick={() => setThemeKey(T.isLight ? "void" : "light")}
+              style={{width:28,height:28,borderRadius:"50%",background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,cursor:"pointer",outline:"none",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
+              {T.isLight ? "🌙" : "☀️"}
+            </button>
+            {/* Theme dots */}
+            <div style={{display:"flex",gap:5}}>
+              {Object.entries(THEMES).filter(([key])=>key!=="light").map(([key,th])=>(
+                <button key={key} title={th.name} onClick={()=>setThemeKey(key)}
+                  style={{width:14,height:14,borderRadius:"50%",background:th.accent,border:themeKey===key?`2px solid ${T.textPrimary}`:"2px solid transparent",cursor:"pointer",outline:"none",transition:"transform 0.15s",transform:themeKey===key?"scale(1.25)":"scale(1)",padding:0}}/>
+              ))}
+            </div>
           </div>
+        </div>
+        {/* Row 2: Nav buttons */}
+        <div style={{display:"flex"}}>
           {[["log","⊕ Workout"],["history",`◫ History (${sessions.length})`],["trends","↗ Trends"]].map(([v,label])=>(
             <button key={v} onClick={()=>setView(v)}
-              style={{padding:"7px 16px",borderRadius:4,fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",cursor:"pointer",fontFamily:"inherit",border:`1px solid ${view===v?T.border:"transparent"}`,background:view===v?T.surface:"transparent",color:view===v?T.accent:T.muted,transition:"all 0.15s",outline:"none"}}>
+              style={{flex:1,padding:"8px 4px",borderRadius:0,fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",cursor:"pointer",fontFamily:"inherit",border:"none",borderBottom:`2px solid ${view===v?T.accent:"transparent"}`,background:"transparent",color:view===v?T.accent:T.muted,transition:"all 0.15s",outline:"none"}}>
               {label}
             </button>
           ))}
