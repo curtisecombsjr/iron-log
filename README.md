@@ -2,8 +2,6 @@
 
 A fast, mobile-first weightlifting tracker. Log workouts, track progress, and analyze trends — all from your phone.
 
-**Live app:** [iron-log.vercel.app](https://iron-log.vercel.app)
-
 ---
 
 ## Features
