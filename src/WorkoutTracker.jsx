@@ -144,7 +144,41 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx }) {
 }
 
 function TrendsView({ sessions, T }) {
-  // Build list of all exercises ever logged
+  // --- Date range (default: last 7 days) ---
+  const toDateStr = (d) => d.toISOString().slice(0, 10);
+  const todayStr = toDateStr(new Date());
+  const weekAgoStr = toDateStr(new Date(Date.now() - 6 * 86400000));
+
+  const [rangeStart, setRangeStart] = useState(weekAgoStr);
+  const [rangeEnd, setRangeEnd] = useState(todayStr);
+  const [activePreset, setActivePreset] = useState("7d");
+
+  const applyPreset = (key) => {
+    setActivePreset(key);
+    const now = new Date();
+    const end = toDateStr(now);
+    const starts = { "7d": 6, "30d": 29, "90d": 89, "1y": 364 };
+    if (key === "all") {
+      const oldest = sessions.length
+        ? toDateStr(new Date(Math.min(...sessions.map(s => new Date(s.date)))))
+        : toDateStr(new Date(Date.now() - 6 * 86400000));
+      setRangeStart(oldest);
+    } else {
+      setRangeStart(toDateStr(new Date(Date.now() - starts[key] * 86400000)));
+    }
+    setRangeEnd(end);
+  };
+
+  const handleStartChange = (v) => { setRangeStart(v); setActivePreset(null); };
+  const handleEndChange   = (v) => { setRangeEnd(v);   setActivePreset(null); };
+
+  // Filter sessions to date range (inclusive)
+  const filteredSessions = sessions.filter(s => {
+    const d = s.date.slice(0, 10);
+    return d >= rangeStart && d <= rangeEnd;
+  });
+
+  // Build list of all exercises ever logged (from ALL sessions for the picker)
   const allExercises = [...new Set(
     sessions.flatMap(s => s.exercises.map(e => e.name))
   )].sort();
@@ -152,7 +186,7 @@ function TrendsView({ sessions, T }) {
   const [selectedEx, setSelectedEx] = useState(allExercises[0] || "");
 
   // --- Strength chart data: best set (max weight) per session for selected exercise ---
-  const strengthData = sessions
+  const strengthData = filteredSessions
     .slice().reverse()
     .flatMap(s => {
       const matches = s.exercises.filter(e => e.name === selectedEx);
@@ -162,9 +196,9 @@ function TrendsView({ sessions, T }) {
       return [{ date: s.date, label: fmtDate(s.date), value: bestWeight }];
     });
 
-  // --- Volume chart data: total volume (weight*reps) per muscle group across all sessions ---
+  // --- Volume chart data: total volume (weight*reps) per muscle group ---
   const volumeByMuscle = MUSCLE_GROUPS.map(mg => {
-    const total = sessions.reduce((sum, s) => {
+    const total = filteredSessions.reduce((sum, s) => {
       return sum + s.exercises
         .filter(e => e.muscleGroup === mg)
         .reduce((eSum, e) => eSum + e.sets.reduce((sSum, st) => {
@@ -321,8 +355,54 @@ function TrendsView({ sessions, T }) {
   const lastWeight = strengthData.length ? strengthData[strengthData.length-1].value : null;
   const delta = (firstWeight && lastWeight) ? lastWeight - firstWeight : null;
 
+  const PRESETS = [
+    { key:"7d",  label:"7D"  },
+    { key:"30d", label:"30D" },
+    { key:"90d", label:"90D" },
+    { key:"1y",  label:"1Y"  },
+    { key:"all", label:"ALL" },
+  ];
+
+  const inputStyle = {
+    padding:"8px 10px", borderRadius:6, background:T.inputBg,
+    border:`1px solid ${T.border}`, color:T.textPrimary,
+    fontSize:13, fontFamily:"inherit", outline:"none",
+    colorScheme: T.isLight ? "light" : "dark",
+  };
+
   return (
     <div className="fade" style={{display:"flex",flexDirection:"column",gap:20}}>
+
+      {/* Date range picker */}
+      <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 16px"}}>
+        <div style={{fontSize:12,letterSpacing:"0.14em",color:T.dimmer,textTransform:"uppercase",marginBottom:10}}>Date Range</div>
+        {/* Preset buttons */}
+        <div style={{display:"flex",gap:6,marginBottom:12}}>
+          {PRESETS.map(p=>(
+            <button key={p.key} onClick={()=>applyPreset(p.key)}
+              style={{flex:1,padding:"8px 4px",borderRadius:5,cursor:"pointer",fontFamily:"inherit",
+                border:`1px solid ${activePreset===p.key?T.accent:T.border}`,
+                background:activePreset===p.key?T.accentDim:"transparent",
+                color:activePreset===p.key?T.accentText:T.muted,
+                fontSize:13,letterSpacing:"0.08em",outline:"none",transition:"all 0.15s"}}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+        {/* Custom date inputs */}
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <input type="date" value={rangeStart} onChange={e=>handleStartChange(e.target.value)}
+            style={{...inputStyle, flex:1}}/>
+          <span style={{color:T.dimmer,fontSize:14}}>→</span>
+          <input type="date" value={rangeEnd} onChange={e=>handleEndChange(e.target.value)}
+            style={{...inputStyle, flex:1}}/>
+        </div>
+        {filteredSessions.length === 0 && sessions.length > 0 && (
+          <div style={{marginTop:10,fontSize:13,color:T.muted,letterSpacing:"0.04em"}}>
+            No sessions in this range — try widening it.
+          </div>
+        )}
+      </div>
 
       {/* Strength Progress */}
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:20}}>
