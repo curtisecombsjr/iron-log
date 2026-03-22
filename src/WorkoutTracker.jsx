@@ -586,6 +586,62 @@ export default function WorkoutTracker() {
   useEffect(()=>{localStorage.setItem("wl_theme",themeKey);},[themeKey]);
   useEffect(()=>{localStorage.setItem("wl_templates",JSON.stringify(templates));},[templates]);
 
+  // Auto-save snapshot on close/hide
+  useEffect(()=>{
+    const snapshot = () => {
+      const data = {
+        sessions: JSON.parse(localStorage.getItem("wl_sessions2")||"[]"),
+        customExercises: JSON.parse(localStorage.getItem("wl_custom_ex")||"{}"),
+        templates: JSON.parse(localStorage.getItem("wl_templates")||"[]"),
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem("wl_autosave", JSON.stringify(data));
+    };
+    window.addEventListener("beforeunload", snapshot);
+    document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="hidden") snapshot(); });
+    return ()=>{ window.removeEventListener("beforeunload", snapshot); };
+  }, []);
+
+  // Auto-restore on mount: merge anything in autosave that isn't in current data
+  useEffect(()=>{
+    try {
+      const raw = localStorage.getItem("wl_autosave");
+      if(!raw) return;
+      const saved = JSON.parse(raw);
+
+      // Merge sessions
+      if(saved.sessions?.length) {
+        setSessions(prev=>{
+          const existingIds = new Set(prev.map(s=>s.id));
+          const missing = saved.sessions.filter(s=>!existingIds.has(s.id));
+          if(!missing.length) return prev;
+          return [...prev, ...missing].sort((a,b)=>new Date(b.date)-new Date(a.date));
+        });
+      }
+      // Merge custom exercises
+      if(saved.customExercises) {
+        setCustomExercises(prev=>{
+          const merged = {...prev};
+          let changed = false;
+          Object.entries(saved.customExercises).forEach(([mg,exs])=>{
+            const combined = [...new Set([...(merged[mg]||[]),...exs])];
+            if(combined.length!==(merged[mg]||[]).length){ merged[mg]=combined; changed=true; }
+          });
+          return changed ? merged : prev;
+        });
+      }
+      // Merge templates
+      if(saved.templates?.length) {
+        setTemplates(prev=>{
+          const existingIds = new Set(prev.map(t=>t.id));
+          const missing = saved.templates.filter(t=>!existingIds.has(t.id));
+          if(!missing.length) return prev;
+          return [...prev, ...missing];
+        });
+      }
+    } catch(e) { /* silently ignore corrupt autosave */ }
+  }, []);
+
   const saveTemplate = () => {
     if(!templateName.trim()||!workout.length) return;
     const tmpl = {
