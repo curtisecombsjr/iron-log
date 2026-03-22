@@ -32,7 +32,7 @@ const THEMES = {
     fontDisplay:"'Bebas Neue',sans-serif", fontMono:"'DM Mono',monospace", fontBody:"'DM Mono',monospace", isLight:true },
 };
 
-function SetRow({ set, idx, onUpdate, onDelete, T }) {
+function SetRow({ set, idx, onUpdate, onDelete, T, onRestartTimer }) {
   const done = !!set.done;
   return (
     <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.borderSubtle}`,opacity:done?0.5:1,transition:"opacity 0.2s"}}>
@@ -47,7 +47,7 @@ function SetRow({ set, idx, onUpdate, onDelete, T }) {
       <input value={set.note} placeholder="note"
         onChange={e=>onUpdate({...set,note:e.target.value})}
         style={{width:80,minWidth:0,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.borderSubtle}`,color:T.textSecondary,fontSize:14,fontFamily:"inherit",outline:"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}/>
-      <button onClick={()=>onUpdate({...set,done:!done})}
+      <button onClick={()=>{ const nowDone=!done; onUpdate({...set,done:nowDone}); if(nowDone) onRestartTimer?.(); }}
         style={{width:26,height:26,borderRadius:6,border:`2px solid ${done?T.accent:T.border}`,background:done?T.accent:"transparent",cursor:"pointer",outline:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s",padding:0}}
         title={done?"Mark incomplete":"Mark complete"}>
         {done&&<span style={{color:T.isLight?"#fff":T.accentText,fontSize:14,lineHeight:1,fontWeight:"bold"}}>✓</span>}
@@ -82,7 +82,6 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
   const addSet = () => {
     const last = ex.sets[ex.sets.length - 1];
     sync({sets:[...ex.sets,{id:uid(),weight:last?.weight||"",reps:last?.reps||"",note:""}]});
-    onAddSet?.();
   };
   const updateSet = (id,u) => sync({sets:ex.sets.map(s=>s.id===id?u:s)});
   const deleteSet = (id) => sync({sets:ex.sets.filter(s=>s.id!==id)});
@@ -137,7 +136,7 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
         </div>
         {ex.sets.length===0&&<div style={{padding:"10px 0",color:T.dimmest,fontSize:14,textAlign:"center",letterSpacing:"0.06em"}}>NO SETS — ADD ONE BELOW</div>}
         {ex.sets.map((s,i)=>(
-          <SetRow key={s.id} set={s} idx={i} T={T} onUpdate={u=>updateSet(s.id,u)} onDelete={()=>deleteSet(s.id)}/>
+          <SetRow key={s.id} set={s} idx={i} T={T} onUpdate={u=>updateSet(s.id,u)} onDelete={()=>deleteSet(s.id)} onRestartTimer={onAddSet}/>
         ))}
         <button onClick={addSet}
           style={{width:"100%",margin:"8px 0",padding:"7px",borderRadius:5,background:"transparent",border:`1px dashed ${T.border}`,color:T.timerIdle,fontSize:14,cursor:"pointer",letterSpacing:"0.08em",fontFamily:"inherit",transition:"all 0.15s",outline:"none"}}
