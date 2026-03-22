@@ -489,8 +489,10 @@ export default function WorkoutTracker() {
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [saveFlash, setSaveFlash] = useState(null);
-  const [restoreMsg, setRestoreMsg] = useState(null); // {type:'success'|'error', text:string}
+  const [restoreMsg, setRestoreMsg] = useState(null);
   const fileInputRef = useRef(null);
+  const [prBanner, setPrBanner] = useState(null); // {exerciseName, weight}
+  const [milestoneBanner, setMilestoneBanner] = useState(null); // {days, message}
 
   const toDateStr = (d) => d.toISOString().slice(0,10);
   const [histRangeStart, setHistRangeStart] = useState(()=>toDateStr(new Date(Date.now()-6*86400000)));
@@ -738,6 +740,34 @@ export default function WorkoutTracker() {
 
   const totalSets=workout.reduce((a,e)=>a+e.sets.length,0);
 
+  // --- Streak calculation (36hr grace period) ---
+  const calcStreak = (sessionList) => {
+    if(!sessionList.length) return 0;
+    const tds = d => new Date(d).toLocaleDateString("en-US");
+    const days = [...new Set(sessionList.map(s=>tds(s.date)))];
+    // Sort descending
+    days.sort((a,b)=>new Date(b)-new Date(a));
+    // Check if most recent session is within 36 hours
+    const lastDate = new Date(sessionList[0].date);
+    if(Date.now()-lastDate.getTime() > 36*3600*1000) return 0;
+    let streak=1;
+    for(let i=0;i<days.length-1;i++){
+      const diff=(new Date(days[i])-new Date(days[i+1]))/864e5;
+      if(diff<=2) streak++; else break;
+    }
+    return streak;
+  };
+  const streak = calcStreak(sessions);
+
+  const MILESTONES = [
+    {days:3,   msg:"3 days strong! You're building a habit. 💪"},
+    {days:7,   msg:"One full week! You showed up every day. 🔥"},
+    {days:14,  msg:"Two weeks straight! You're unstoppable. ⚡"},
+    {days:30,  msg:"30 days! A month of dedication. 🏆"},
+    {days:60,  msg:"60 days! This is who you are now. 🥇"},
+    {days:100, msg:"100 days! Absolute legend. 🎖️"},
+  ];
+
   const saveSession=()=>{
     const valid=workout.some(e=>e.sets.some(s=>s.weight&&s.reps));
     if(!valid){setSaveFlash("error");setTimeout(()=>setSaveFlash(null),900);return;}
@@ -752,13 +782,43 @@ export default function WorkoutTracker() {
       }
     });
     setCustomExercises(newCustom);
+
+    // --- PR detection ---
+    let prFound = null;
+    workout.forEach(ex=>{
+      const bestNow = Math.max(...ex.sets.map(s=>parseFloat(s.weight)||0));
+      if(!bestNow) return;
+      const prevBest = sessions.flatMap(s=>s.exercises.filter(e=>e.name===ex.name).flatMap(e=>e.sets.map(st=>parseFloat(st.weight)||0)));
+      const prevMax = prevBest.length ? Math.max(...prevBest) : 0;
+      if(bestNow > prevMax) prFound = {exerciseName: ex.name, weight: bestNow};
+    });
+
     const session={
       id:uid(),date:new Date().toISOString(),
       name:workoutName,
       notes:workoutNotes.trim(),
       exercises:workout.map(e=>({...e,sets:e.sets.filter(s=>s.weight||s.reps).map(({done,...s})=>s)})).filter(e=>e.sets.length>0)
     };
-    setSessions(prev=>[session,...prev]);
+
+    setSessions(prev=>{
+      const updated=[session,...prev];
+      // Check milestone on new streak
+      const newStreak = calcStreak(updated);
+      const hit = MILESTONES.find(m=>m.days===newStreak);
+      if(hit){
+        const seenKey=`wl_milestone_${hit.days}`;
+        if(!localStorage.getItem(seenKey)){
+          localStorage.setItem(seenKey,"1");
+          setTimeout(()=>{ setMilestoneBanner(hit); setTimeout(()=>setMilestoneBanner(null),5000); },400);
+        }
+      }
+      return updated;
+    });
+
+    if(prFound){
+      setTimeout(()=>{ setPrBanner(prFound); setTimeout(()=>setPrBanner(null),4000); },300);
+    }
+
     setWorkout([]); setWorkoutName(""); setWorkoutNotes("");
     setSaveFlash("success"); setTimeout(()=>setSaveFlash(null),800);
     setView("history");
@@ -784,11 +844,29 @@ export default function WorkoutTracker() {
         optgroup{background:${T.selectBg}}
       `}</style>
 
-      {/* Header */}
+      {/* PR Banner */}
+      {prBanner&&(
+        <div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",zIndex:100,background:"linear-gradient(135deg,#f59e0b,#d97706)",borderRadius:10,padding:"12px 20px",boxShadow:"0 4px 20px rgba(0,0,0,0.3)",textAlign:"center",animation:"fi 0.3s ease",minWidth:260}}>
+          <div style={{fontSize:18,marginBottom:2}}>🏆 New Personal Record!</div>
+          <div style={{fontSize:14,opacity:0.9,fontFamily:"inherit"}}>{prBanner.exerciseName} — {prBanner.weight} lbs</div>
+        </div>
+      )}
+      {/* Milestone Banner */}
+      {milestoneBanner&&(
+        <div style={{position:"fixed",top:16,left:"50%",transform:"translateX(-50%)",zIndex:100,background:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:`1px solid ${T.accent}`,borderRadius:10,padding:"14px 22px",boxShadow:"0 4px 20px rgba(0,0,0,0.3)",textAlign:"center",animation:"fi 0.3s ease",minWidth:280}}>
+          <div style={{fontSize:22,marginBottom:4}}>🔥 {milestoneBanner.days} Day Streak!</div>
+          <div style={{fontSize:13,color:T.accentText,opacity:0.9,fontFamily:"inherit"}}>{milestoneBanner.msg}</div>
+        </div>
+      )}
       <div style={{borderBottom:`1px solid ${T.borderSubtle}`,padding:"12px 20px 0",position:"sticky",top:0,background:T.bg,zIndex:10}}>
         {/* Row 1: Logo + theme controls */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
           <span style={{fontFamily:T.fontDisplay,fontSize:30,letterSpacing:"0.08em",color:T.accent}}>IRON LOG</span>
+          {streak>0&&(
+            <span style={{fontSize:14,color:T.accent,letterSpacing:"0.04em",fontFamily:T.fontBody}}>
+              🔥 {streak} day{streak!==1?"s":""}
+            </span>
+          )}
           <div style={{display:"flex",gap:6,alignItems:"center"}}>
             {/* Light mode toggle */}
             <button
