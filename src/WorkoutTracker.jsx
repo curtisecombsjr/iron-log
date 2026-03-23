@@ -959,6 +959,7 @@ export default function WorkoutTracker() {
       )}
 
       {/* Header */}
+      <div style={{borderBottom:`1px solid ${T.borderSubtle}`,padding:"12px 20px 0",position:"sticky",top:0,background:T.bg,zIndex:10}}>
         {/* Row 1: Logo + theme controls */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
           <span style={{fontFamily:T.fontDisplay,fontSize:30,letterSpacing:"0.08em",color:T.accent}}>IRON LOG</span>
