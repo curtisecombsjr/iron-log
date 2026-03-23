@@ -505,6 +505,7 @@ export default function WorkoutTracker() {
   const fileInputRef = useRef(null);
   const [prBanner, setPrBanner] = useState(null); // {exerciseName, weight}
   const [milestoneBanner, setMilestoneBanner] = useState(null); // {days, message}
+  const [summary, setSummary] = useState(null); // saved session object + prs
 
   const toDateStr = (d) => d.toISOString().slice(0,10);
   const [histRangeStart, setHistRangeStart] = useState(()=>toDateStr(new Date(Date.now()-6*86400000)));
@@ -795,14 +796,14 @@ export default function WorkoutTracker() {
     });
     setCustomExercises(newCustom);
 
-    // --- PR detection ---
-    let prFound = null;
+    // --- PR detection (collect all PRs) ---
+    const prsFound = [];
     workout.forEach(ex=>{
       const bestNow = Math.max(...ex.sets.map(s=>parseFloat(s.weight)||0));
       if(!bestNow) return;
       const prevBest = sessions.flatMap(s=>s.exercises.filter(e=>e.name===ex.name).flatMap(e=>e.sets.map(st=>parseFloat(st.weight)||0)));
       const prevMax = prevBest.length ? Math.max(...prevBest) : 0;
-      if(bestNow > prevMax) prFound = {exerciseName: ex.name, weight: bestNow};
+      if(bestNow > prevMax) prsFound.push({exerciseName: ex.name, weight: bestNow});
     });
 
     const session={
@@ -814,26 +815,22 @@ export default function WorkoutTracker() {
 
     setSessions(prev=>{
       const updated=[session,...prev];
-      // Check milestone on new streak
       const newStreak = calcStreak(updated);
       const hit = MILESTONES.find(m=>m.days===newStreak);
       if(hit){
         const seenKey=`wl_milestone_${hit.days}`;
         if(!localStorage.getItem(seenKey)){
           localStorage.setItem(seenKey,"1");
-          setTimeout(()=>{ setMilestoneBanner(hit); setTimeout(()=>setMilestoneBanner(null),5000); },400);
+          setTimeout(()=>{ setMilestoneBanner(hit); setTimeout(()=>setMilestoneBanner(null),5000); },600);
         }
       }
       return updated;
     });
 
-    if(prFound){
-      setTimeout(()=>{ setPrBanner(prFound); setTimeout(()=>setPrBanner(null),4000); },300);
-    }
-
     setWorkout([]); setWorkoutName(""); setWorkoutNotes("");
     setSaveFlash("success"); setTimeout(()=>setSaveFlash(null),800);
-    setView("history");
+    // Show summary overlay instead of navigating away
+    setSummary({session, prs: prsFound});
   };
 
   const deleteSession=(id)=>setSessions(prev=>prev.filter(s=>s.id!==id));
@@ -870,7 +867,98 @@ export default function WorkoutTracker() {
           <div style={{fontSize:13,color:T.accentText,opacity:0.9,fontFamily:"inherit"}}>{milestoneBanner.msg}</div>
         </div>
       )}
-      <div style={{borderBottom:`1px solid ${T.borderSubtle}`,padding:"12px 20px 0",position:"sticky",top:0,background:T.bg,zIndex:10}}>
+      {/* Workout Summary Overlay */}
+      {summary&&(
+        <div style={{position:"fixed",inset:0,zIndex:200,background:T.bg+"ee",display:"flex",alignItems:"flex-start",justifyContent:"center",overflowY:"auto",padding:"24px 16px 40px"}}>
+          <div className="fade" style={{width:"100%",maxWidth:580,background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,overflow:"hidden"}}>
+            {/* Header */}
+            <div style={{padding:"20px 20px 16px",borderBottom:`1px solid ${T.borderSubtle}`,background:T.surfaceDeep}}>
+              <div style={{fontFamily:T.fontDisplay,fontSize:26,color:T.accent,letterSpacing:"0.06em",marginBottom:4}}>{summary.session.name}</div>
+              <div style={{fontSize:13,color:T.muted}}>{fmtDate(summary.session.date)}</div>
+            </div>
+
+            {/* Stats row */}
+            {(()=>{
+              const totalSets = summary.session.exercises.reduce((a,e)=>a+e.sets.length,0);
+              const totalVol  = summary.session.exercises.reduce((a,e)=>a+e.sets.reduce((b,s)=>(parseFloat(s.weight)||0)*(parseInt(s.reps)||0)+b,0),0);
+              const fmtVol = v => v>=1000?`${(v/1000).toFixed(1)}k`:Math.round(v)+"";
+              return (
+                <div style={{display:"flex",padding:"14px 20px",gap:12,borderBottom:`1px solid ${T.borderSubtle}`}}>
+                  {[
+                    {label:"EXERCISES", value: summary.session.exercises.length},
+                    {label:"TOTAL SETS",  value: totalSets},
+                    {label:"VOLUME",      value: totalVol>0?`${fmtVol(totalVol)} lbs`:"—"},
+                  ].map(s=>(
+                    <div key={s.label} style={{flex:1,background:T.surfaceDeep,borderRadius:8,padding:"10px 8px",textAlign:"center",border:`1px solid ${T.border}`}}>
+                      <div style={{fontSize:10,color:T.dimmer,letterSpacing:"0.12em",marginBottom:3}}>{s.label}</div>
+                      <div style={{fontSize:18,color:T.textPrimary,fontFamily:T.fontDisplay}}>{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* PRs */}
+            {summary.prs.length>0&&(
+              <div style={{padding:"12px 20px",borderBottom:`1px solid ${T.borderSubtle}`,background:"#f59e0b18"}}>
+                <div style={{fontSize:11,letterSpacing:"0.14em",color:"#d97706",textTransform:"uppercase",marginBottom:8}}>🏆 Personal Records</div>
+                {summary.prs.map((pr,i)=>(
+                  <div key={i} style={{fontSize:14,color:T.textPrimary,marginBottom:4}}>
+                    <span style={{color:"#f59e0b",fontWeight:500}}>{pr.exerciseName}</span>
+                    <span style={{color:T.muted}}> — </span>
+                    <span>{pr.weight} lbs</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Exercise breakdown */}
+            <div style={{padding:"12px 20px",borderBottom:`1px solid ${T.borderSubtle}`}}>
+              <div style={{fontSize:11,letterSpacing:"0.14em",color:T.dimmer,textTransform:"uppercase",marginBottom:10}}>Exercises</div>
+              {summary.session.exercises.map(ex=>(
+                <div key={ex.id} style={{marginBottom:10}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                    <span style={{fontSize:10,padding:"1px 7px",borderRadius:3,background:MC[ex.muscleGroup]+"22",color:MC[ex.muscleGroup],textTransform:"uppercase",letterSpacing:"0.06em"}}>{ex.muscleGroup}</span>
+                    <span style={{fontSize:14,color:T.textPrimary,fontWeight:500}}>{ex.name}</span>
+                  </div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6,paddingLeft:4}}>
+                    {ex.sets.map((s,i)=>{
+                      const isPR = summary.prs.some(p=>p.exerciseName===ex.name&&parseFloat(s.weight)>=p.weight);
+                      return (
+                        <span key={i} style={{fontSize:12,padding:"3px 9px",borderRadius:5,background:isPR?"#f59e0b22":T.surfaceDeep,border:`1px solid ${isPR?"#f59e0b44":T.border}`,color:isPR?"#f59e0b":T.muted}}>
+                          {s.weight||"—"} × {s.reps||"—"}{isPR?" 🏆":""}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Notes */}
+            {summary.session.notes&&(
+              <div style={{padding:"12px 20px",borderBottom:`1px solid ${T.borderSubtle}`}}>
+                <div style={{fontSize:11,letterSpacing:"0.14em",color:T.dimmer,textTransform:"uppercase",marginBottom:6}}>Notes</div>
+                <div style={{fontSize:13,color:T.textSecondary,fontStyle:"italic",lineHeight:1.6}}>{summary.session.notes}</div>
+              </div>
+            )}
+
+            {/* Done button */}
+            <div style={{padding:"16px 20px",display:"flex",gap:10}}>
+              <button onClick={()=>{setSummary(null);setView("log");}}
+                style={{flex:1,padding:"12px",borderRadius:8,cursor:"pointer",fontFamily:"inherit",background:"transparent",border:`1px solid ${T.border}`,color:T.muted,fontSize:14,letterSpacing:"0.08em",textTransform:"uppercase",outline:"none"}}>
+                New Workout
+              </button>
+              <button onClick={()=>{setSummary(null);setView("history");}}
+                style={{flex:2,padding:"12px",borderRadius:8,cursor:"pointer",fontFamily:"inherit",background:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:"none",color:T.accentText,fontSize:14,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:500,outline:"none"}}>
+                Done ✓
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
         {/* Row 1: Logo + theme controls */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
           <span style={{fontFamily:T.fontDisplay,fontSize:30,letterSpacing:"0.08em",color:T.accent}}>IRON LOG</span>
