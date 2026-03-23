@@ -59,7 +59,7 @@ function SetRow({ set, idx, onUpdate, onDelete, T, onRestartTimer }) {
   );
 }
 
-function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSet }) {
+function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSet, prevSets }) {
   const [mg, setMg] = useState(ex.muscleGroup);
   const [exName, setExName] = useState(ex.name);
   const [custom, setCustom] = useState(ex.isCustom||false);
@@ -135,9 +135,21 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
           <span style={{fontSize:12,color:T.dimmest,flex:1,letterSpacing:"0.08em"}}>NOTE</span>
         </div>
         {ex.sets.length===0&&<div style={{padding:"10px 0",color:T.dimmest,fontSize:14,textAlign:"center",letterSpacing:"0.06em"}}>NO SETS — ADD ONE BELOW</div>}
-        {ex.sets.map((s,i)=>(
-          <SetRow key={s.id} set={s} idx={i} T={T} onUpdate={u=>updateSet(s.id,u)} onDelete={()=>deleteSet(s.id)} onRestartTimer={onAddSet}/>
-        ))}
+        {ex.sets.map((s,i)=>{
+          const ghost = prevSets?.[i];
+          return (
+            <div key={s.id}>
+              <SetRow set={s} idx={i} T={T} onUpdate={u=>updateSet(s.id,u)} onDelete={()=>deleteSet(s.id)} onRestartTimer={onAddSet}/>
+              {ghost&&(ghost.weight||ghost.reps)&&(
+                <div style={{display:"flex",gap:8,paddingLeft:28,paddingBottom:4,marginTop:-2}}>
+                  <span style={{fontSize:11,color:T.dimmest,fontStyle:"italic",letterSpacing:"0.03em"}}>
+                    last: {ghost.weight?`${ghost.weight} lbs`:"—"} × {ghost.reps?`${ghost.reps} reps`:"—"}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
         <button onClick={addSet}
           style={{width:"100%",margin:"8px 0",padding:"7px",borderRadius:5,background:"transparent",border:`1px dashed ${T.border}`,color:T.timerIdle,fontSize:14,cursor:"pointer",letterSpacing:"0.08em",fontFamily:"inherit",transition:"all 0.15s",outline:"none"}}
           onMouseEnter={e=>{e.currentTarget.style.borderColor=T.accent;e.currentTarget.style.color=T.accent;}}
@@ -964,14 +976,20 @@ export default function WorkoutTracker() {
                 ADD AN EXERCISE TO GET STARTED
               </div>
             )}
-            {workout.map(ex=>(
-              <ExerciseBlock key={ex.id} ex={ex}
-                customExercises={customExercises}
-                T={T}
-                onUpdateEx={u=>updateExercise(ex.id,u)}
-                onDeleteEx={()=>deleteExercise(ex.id)}
-                onAddSet={restartTimer}/>
-            ))}
+            {workout.map(ex=>{
+              // Find the sets from the most recent session that included this exercise
+              const prevSession = sessions.find(s=>s.exercises.some(e=>e.name===ex.name));
+              const prevSets = prevSession?.exercises.find(e=>e.name===ex.name)?.sets || [];
+              return (
+                <ExerciseBlock key={ex.id} ex={ex}
+                  customExercises={customExercises}
+                  T={T}
+                  prevSets={prevSets}
+                  onUpdateEx={u=>updateExercise(ex.id,u)}
+                  onDeleteEx={()=>deleteExercise(ex.id)}
+                  onAddSet={restartTimer}/>
+              );
+            })}
 
             {/* Templates */}
             {templates.length>0&&(
