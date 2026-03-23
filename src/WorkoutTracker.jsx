@@ -388,8 +388,114 @@ function TrendsView({ sessions, T }) {
     colorScheme: T.isLight ? "light" : "dark",
   };
 
+  // --- Heatmap: last 52 weeks ---
+  const heatmapDays = (() => {
+    const workoutDays = new Set(sessions.map(s=>s.date.slice(0,10)));
+    const days = [];
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    // Go back 364 days (52 weeks) from today, starting on Sunday
+    const start = new Date(today);
+    start.setDate(start.getDate() - 363);
+    // Pad to previous Sunday
+    start.setDate(start.getDate() - start.getDay());
+    const cur = new Date(start);
+    while(cur <= today) {
+      const str = cur.toISOString().slice(0,10);
+      days.push({ date: str, active: workoutDays.has(str), future: cur > today });
+      cur.setDate(cur.getDate()+1);
+    }
+    return days;
+  })();
+
+  // Group into weeks (columns of 7)
+  const heatmapWeeks = [];
+  for(let i=0;i<heatmapDays.length;i+=7) heatmapWeeks.push(heatmapDays.slice(i,i+7));
+
+  // Month labels: find first week where month changes
+  const monthLabels = [];
+  heatmapWeeks.forEach((week,wi)=>{
+    const firstDay = week[0];
+    const d = new Date(firstDay.date);
+    if(wi===0 || new Date(heatmapWeeks[wi-1][0].date).getMonth()!==d.getMonth()) {
+      monthLabels.push({wi, label: d.toLocaleDateString("en-US",{month:"short"})});
+    }
+  });
+
+  const totalWorkouts = sessions.length;
+  const workoutsThisYear = sessions.filter(s=>{
+    const d = new Date(s.date);
+    return d >= new Date(new Date().getFullYear(),0,1);
+  }).length;
+
   return (
     <div className="fade" style={{display:"flex",flexDirection:"column",gap:20}}>
+
+      {/* Frequency Heatmap */}
+      <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"16px 16px 14px"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,flexWrap:"wrap",gap:8}}>
+          <div>
+            <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:2}}>Workout Frequency</div>
+            <div style={{fontSize:13,color:T.muted}}>Last 52 weeks</div>
+          </div>
+          <div style={{display:"flex",gap:12}}>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:9,color:T.dimmer,letterSpacing:"0.1em",marginBottom:2}}>THIS YEAR</div>
+              <div style={{fontSize:18,color:T.accent,fontFamily:T.fontDisplay}}>{workoutsThisYear}</div>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:9,color:T.dimmer,letterSpacing:"0.1em",marginBottom:2}}>ALL TIME</div>
+              <div style={{fontSize:18,color:T.textPrimary,fontFamily:T.fontDisplay}}>{totalWorkouts}</div>
+            </div>
+          </div>
+        </div>
+        <div style={{overflowX:"auto"}}>
+          <div style={{display:"inline-block",minWidth:"100%"}}>
+            {/* Month labels */}
+            <div style={{display:"flex",marginBottom:4,paddingLeft:18}}>
+              {heatmapWeeks.map((_,wi)=>{
+                const ml = monthLabels.find(m=>m.wi===wi);
+                return <div key={wi} style={{width:12,marginRight:2,fontSize:9,color:T.dimmer,flexShrink:0}}>{ml?ml.label:""}</div>;
+              })}
+            </div>
+            {/* Day rows (Sun=0 ... Sat=6) */}
+            <div style={{display:"flex",gap:0}}>
+              {/* Day labels */}
+              <div style={{display:"flex",flexDirection:"column",gap:2,marginRight:4}}>
+                {["S","M","T","W","T","F","S"].map((d,i)=>(
+                  <div key={i} style={{height:12,fontSize:9,color:T.dimmer,lineHeight:"12px",width:14,textAlign:"right"}}>{i%2===1?d:""}</div>
+                ))}
+              </div>
+              {/* Week columns */}
+              {heatmapWeeks.map((week,wi)=>(
+                <div key={wi} style={{display:"flex",flexDirection:"column",gap:2,marginRight:2}}>
+                  {week.map((day,di)=>(
+                    <div key={di}
+                      title={`${day.date}${day.active?" — workout":""}`}
+                      style={{
+                        width:12,height:12,borderRadius:2,flexShrink:0,
+                        background: day.future ? "transparent"
+                          : day.active ? T.accent
+                          : T.isLight ? "#e8e4dd" : T.dimmest,
+                        opacity: day.future ? 0 : 1,
+                        transition:"background 0.1s",
+                        cursor: day.active?"default":"default",
+                      }}/>
+                  ))}
+                </div>
+              ))}
+            </div>
+            {/* Legend */}
+            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:8,justifyContent:"flex-end"}}>
+              <span style={{fontSize:10,color:T.dimmer}}>Less</span>
+              {[T.isLight?"#e8e4dd":T.dimmest, T.accent].map((c,i)=>(
+                <div key={i} style={{width:12,height:12,borderRadius:2,background:c}}/>
+              ))}
+              <span style={{fontSize:10,color:T.dimmer}}>More</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Date range picker */}
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 16px"}}>
