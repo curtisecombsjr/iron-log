@@ -1186,7 +1186,24 @@ export default function WorkoutTracker() {
               );
             })}
 
-            {/* Templates */}
+            {/* Action buttons */}
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={addExercise}
+                style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:"transparent",border:`1px solid ${T.border}`,color:T.accent,fontSize:14,letterSpacing:"0.1em",textTransform:"uppercase",transition:"all 0.15s",outline:"none"}}
+                onMouseEnter={e=>e.currentTarget.style.background=T.surface}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                + Add Exercise
+              </button>
+              {workout.length>0&&(
+                <button onClick={saveSession}
+                  className={saveFlash==="success"?"fok":saveFlash==="error"?"ferr":""}
+                  style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:"none",color:T.accentText,fontSize:14,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:500,outline:"none"}}>
+                  {saveFlash==="success"?"✓ Saved!":saveFlash==="error"?"Add weight & reps first":saveFlash==="noname"?"Select a workout type":"Save Workout"}
+                </button>
+              )}
+            </div>
+
+            {/* Load Template */}
             {templates.length>0&&(
               <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px"}}>
                 <div style={{fontSize:12,letterSpacing:"0.14em",color:T.dimmer,textTransform:"uppercase",marginBottom:10}}>Load Template</div>
@@ -1213,23 +1230,6 @@ export default function WorkoutTracker() {
                 )}
               </div>
             )}
-
-            {/* Action buttons */}
-            <div style={{display:"flex",gap:10}}>
-              <button onClick={addExercise}
-                style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:"transparent",border:`1px solid ${T.border}`,color:T.accent,fontSize:14,letterSpacing:"0.1em",textTransform:"uppercase",transition:"all 0.15s",outline:"none"}}
-                onMouseEnter={e=>e.currentTarget.style.background=T.surface}
-                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                + Add Exercise
-              </button>
-              {workout.length>0&&(
-                <button onClick={saveSession}
-                  className={saveFlash==="success"?"fok":saveFlash==="error"?"ferr":""}
-                  style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:"none",color:T.accentText,fontSize:14,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:500,outline:"none"}}>
-                  {saveFlash==="success"?"✓ Saved!":saveFlash==="error"?"Add weight & reps first":saveFlash==="noname"?"Select a workout type":"Save Workout"}
-                </button>
-              )}
-            </div>
 
             {/* Save as Template */}
             {workout.length>0&&(
