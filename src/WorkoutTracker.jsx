@@ -47,7 +47,7 @@ function SetRow({ set, idx, onUpdate, onDelete, T, onRestartTimer }) {
       <input value={set.note} placeholder="note"
         onChange={e=>onUpdate({...set,note:e.target.value})}
         style={{width:80,minWidth:0,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.borderSubtle}`,color:T.textSecondary,fontSize:14,fontFamily:"inherit",outline:"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}/>
-      <button onClick={()=>{ const nowDone=!done; onUpdate({...set,done:nowDone}); if(nowDone) onRestartTimer?.(); }}
+      <button onClick={()=>{ const nowDone=!done; onUpdate({...set,done:nowDone}); if(nowDone){ onRestartTimer?.(); try{navigator.vibrate&&navigator.vibrate(40);}catch{} } }}
         style={{width:26,height:26,borderRadius:6,border:`2px solid ${done?T.accent:T.border}`,background:done?T.accent:"transparent",cursor:"pointer",outline:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s",padding:0}}
         title={done?"Mark incomplete":"Mark complete"}>
         {done&&<span style={{color:T.isLight?"#fff":T.accentText,fontSize:14,lineHeight:1,fontWeight:"bold"}}>✓</span>}
@@ -391,6 +391,7 @@ function TrendsView({ sessions, T }) {
   // --- Heatmap: last 52 weeks ---
   const heatmapDays = (() => {
     const workoutDays = new Set(sessions.map(s=>s.date.slice(0,10)));
+    const restDaySet  = new Set(restDays);
     const days = [];
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -402,7 +403,7 @@ function TrendsView({ sessions, T }) {
     const cur = new Date(start);
     while(cur <= today) {
       const str = cur.toISOString().slice(0,10);
-      days.push({ date: str, active: workoutDays.has(str), future: cur > today });
+      days.push({ date: str, active: workoutDays.has(str), rest: restDaySet.has(str) && !workoutDays.has(str), future: cur > today });
       cur.setDate(cur.getDate()+1);
     }
     return days;
@@ -476,6 +477,7 @@ function TrendsView({ sessions, T }) {
                         width:12,height:12,borderRadius:2,flexShrink:0,
                         background: day.future ? "transparent"
                           : day.active ? T.accent
+                          : day.rest ? (T.isLight?"#bfd9f7":"#1e3a6e")
                           : T.isLight ? "#e8e4dd" : T.dimmest,
                         opacity: day.future ? 0 : 1,
                         transition:"background 0.1s",
@@ -488,10 +490,10 @@ function TrendsView({ sessions, T }) {
             {/* Legend */}
             <div style={{display:"flex",alignItems:"center",gap:5,marginTop:8,justifyContent:"flex-end"}}>
               <span style={{fontSize:10,color:T.dimmer}}>Less</span>
-              {[T.isLight?"#e8e4dd":T.dimmest, T.accent].map((c,i)=>(
+              {[T.isLight?"#e8e4dd":T.dimmest, T.isLight?"#bfd9f7":"#1e3a6e", T.accent].map((c,i)=>(
                 <div key={i} style={{width:12,height:12,borderRadius:2,background:c}}/>
               ))}
-              <span style={{fontSize:10,color:T.dimmer}}>More</span>
+              <span style={{fontSize:10,color:T.dimmer}}>Workout</span>
             </div>
           </div>
         </div>
@@ -593,6 +595,41 @@ function TrendsView({ sessions, T }) {
 }
 
 
+function SwipeToDelete({ children, onDelete, T }) {
+  const [offsetX, setOffsetX] = useState(0);
+  const [swiping, setSwiping] = useState(false);
+  const startX = useRef(null);
+  const THRESHOLD = 80;
+
+  const onTouchStart = e => { startX.current = e.touches[0].clientX; setSwiping(true); };
+  const onTouchMove  = e => {
+    if(startX.current===null) return;
+    const dx = e.touches[0].clientX - startX.current;
+    if(dx < 0) setOffsetX(Math.max(dx, -THRESHOLD-20));
+  };
+  const onTouchEnd = () => {
+    if(offsetX < -THRESHOLD) { onDelete(); }
+    setOffsetX(0); setSwiping(false); startX.current=null;
+  };
+
+  return (
+    <div style={{position:"relative",overflow:"hidden",borderRadius:8,marginBottom:0}}>
+      {/* Delete reveal */}
+      <div style={{position:"absolute",right:0,top:0,bottom:0,width:THRESHOLD,background:"#ef4444",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:"0 8px 8px 0"}}>
+        <span style={{color:"#fff",fontSize:20}}>🗑</span>
+      </div>
+      {/* Content slides */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{transform:`translateX(${offsetX}px)`,transition:swiping?"none":"transform 0.2s ease",position:"relative",zIndex:1,background:"transparent"}}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function WorkoutTracker() {
   const [view, setView] = useState("log");
   const [themeKey, setThemeKey] = useState(()=>localStorage.getItem("wl_theme")||"light");
@@ -601,6 +638,7 @@ export default function WorkoutTracker() {
   const [workoutName, setWorkoutName] = useState("");
   const [workoutNotes, setWorkoutNotes] = useState("");
   const [sessions, setSessions] = useState(()=>JSON.parse(localStorage.getItem("wl_sessions2")||"[]"));
+  const [restDays, setRestDays] = useState(()=>JSON.parse(localStorage.getItem("wl_rest_days")||"[]"));
   const [customExercises, setCustomExercises] = useState(()=>JSON.parse(localStorage.getItem("wl_custom_ex")||"{}"));
   const [templates, setTemplates] = useState(()=>JSON.parse(localStorage.getItem("wl_templates")||"[]"));
   const [templateFlash, setTemplateFlash] = useState(null); // 'saved' | 'deleted'
@@ -705,6 +743,7 @@ export default function WorkoutTracker() {
   useEffect(()=>{localStorage.setItem("wl_custom_ex",JSON.stringify(customExercises));},[customExercises]);
   useEffect(()=>{localStorage.setItem("wl_theme",themeKey);},[themeKey]);
   useEffect(()=>{localStorage.setItem("wl_templates",JSON.stringify(templates));},[templates]);
+  useEffect(()=>{localStorage.setItem("wl_rest_days",JSON.stringify(restDays));},[restDays]);
 
   // Auto-save snapshot on close/hide
   useEffect(()=>{
@@ -861,9 +900,11 @@ export default function WorkoutTracker() {
 
   // --- Streak calculation (36hr grace period) ---
   const calcStreak = (sessionList) => {
-    if(!sessionList.length) return 0;
+    if(!sessionList.length && !restDays.length) return 0;
     const tds = d => new Date(d).toLocaleDateString("en-US");
-    const days = [...new Set(sessionList.map(s=>tds(s.date)))];
+    const workoutDaySet = new Set(sessionList.map(s=>tds(s.date)));
+    const restDaySet = new Set(restDays.map(d=>tds(d+"T00:00:00")));
+    const days = [...new Set([...workoutDaySet, ...restDaySet])];
     // Sort descending
     days.sort((a,b)=>new Date(b)-new Date(a));
     // Check if most recent session is within 36 hours
@@ -940,6 +981,11 @@ export default function WorkoutTracker() {
   };
 
   const deleteSession=(id)=>setSessions(prev=>prev.filter(s=>s.id!==id));
+
+  const logRestDay=()=>{
+    const today = new Date().toISOString().slice(0,10);
+    if(!restDays.includes(today)) setRestDays(prev=>[...prev, today]);
+  };
   const timerPct=(timerActive||timerRem<timerBase)?((timerRem/timerBase)*100):100;
 
   return (
@@ -1165,6 +1211,20 @@ export default function WorkoutTracker() {
               rows={3}
               style={{width:"100%",padding:"10px 14px",borderRadius:7,background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical",lineHeight:1.5}}/>
 
+            {/* Log Rest Day — shown when no exercises added yet */}
+            {workout.length===0&&(
+              <button onClick={()=>{
+                const today = new Date().toISOString().slice(0,10);
+                if(!restDays.includes(today)) setRestDays(prev=>[...prev,today]);
+                try{navigator.vibrate&&navigator.vibrate(30);}catch{}
+              }}
+                style={{width:"100%",padding:"10px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:"transparent",border:`1px dashed ${T.border}`,color:T.dimmer,fontSize:13,letterSpacing:"0.08em",textTransform:"uppercase",outline:"none",transition:"all 0.15s"}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=T.muted;e.currentTarget.style.color=T.muted;}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.dimmer;}}>
+                😴 Log Rest Day
+              </button>
+            )}
+
             {/* Exercise blocks */}
             {workout.length===0&&(
               <div style={{textAlign:"center",padding:"32px 0",color:T.border,fontSize:15,letterSpacing:"0.1em",border:`1px dashed ${T.borderSubtle}`,borderRadius:10}}>
@@ -1303,12 +1363,13 @@ export default function WorkoutTracker() {
               <div style={{textAlign:"center",padding:"60px 0",color:T.border,fontSize:15,letterSpacing:"0.1em"}}>NO SESSIONS LOGGED YET</div>
             ):filteredSessions.length===0?null:(
               filteredSessions.map(session=>(
-                <div key={session.id} style={{marginBottom:28}}>
+                <SwipeToDelete key={session.id} onDelete={()=>deleteSession(session.id)} T={T}>
+                  <div style={{marginBottom:28}}>
                   <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-                    <span style={{fontFamily:T.fontDisplay,fontSize:24,letterSpacing:"0.06em",color:T.accent}}>{session.name}</span>
+                    <span style={{fontFamily:T.fontDisplay,fontSize:24,letterSpacing:"0.06em",color:T.accent}}>{session.name==="Rest Day"?"😴 Rest Day":session.name}</span>
                     <span style={{fontSize:13,color:T.muted}}>{fmtDate(session.date)}</span>
                     <div style={{flex:1,height:1,background:T.border}}/>
-                    <span style={{fontSize:12,color:T.dimmer,letterSpacing:"0.1em"}}>{session.exercises.reduce((a,e)=>a+e.sets.length,0)} SETS</span>
+                    {session.name!=="Rest Day"&&<span style={{fontSize:12,color:T.dimmer,letterSpacing:"0.1em"}}>{session.exercises.reduce((a,e)=>a+e.sets.length,0)} SETS</span>}
                     <button onClick={()=>deleteSession(session.id)}
                       style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:17,transition:"color 0.15s",outline:"none"}}
                       onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color=T.dimmest}>✕</button>
@@ -1338,7 +1399,8 @@ export default function WorkoutTracker() {
                       </div>
                     </div>
                   ))}
-                </div>
+                  </div>
+                </SwipeToDelete>
               ))
             )}
             {/* File backup / restore */}
