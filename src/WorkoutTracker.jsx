@@ -161,7 +161,7 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
   );
 }
 
-function TrendsView({ sessions, T }) {
+function TrendsView({ sessions, T, restDays }) {
   // --- Date range (default: last 7 days) ---
   const toDateStr = (d) => d.toISOString().slice(0, 10);
   const todayStr = toDateStr(new Date());
@@ -1403,7 +1403,7 @@ export default function WorkoutTracker() {
         )}
 
         {view==="trends"&&(
-          <TrendsView sessions={sessions} T={T}/>
+          <TrendsView sessions={sessions} T={T} restDays={restDays}/>
         )}
       </div>
     </div>
