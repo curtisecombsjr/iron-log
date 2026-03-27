@@ -449,7 +449,7 @@ function TrendsView({ sessions, T }) {
             </div>
           </div>
         </div>
-        <div style={{overflowX:"auto"}}>
+        <div style={{overflowX:"auto"}} ref={el=>{ if(el) el.scrollLeft = el.scrollWidth; }}>
           <div style={{display:"inline-block",minWidth:"100%"}}>
             {/* Month labels */}
             <div style={{display:"flex",marginBottom:4,paddingLeft:18}}>
