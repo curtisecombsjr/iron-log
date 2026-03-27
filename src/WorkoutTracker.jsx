@@ -595,41 +595,6 @@ function TrendsView({ sessions, T }) {
 }
 
 
-function SwipeToDelete({ children, onDelete, T }) {
-  const [offsetX, setOffsetX] = useState(0);
-  const [swiping, setSwiping] = useState(false);
-  const startX = useRef(null);
-  const THRESHOLD = 80;
-
-  const onTouchStart = e => { startX.current = e.touches[0].clientX; setSwiping(true); };
-  const onTouchMove  = e => {
-    if(startX.current===null) return;
-    const dx = e.touches[0].clientX - startX.current;
-    if(dx < 0) setOffsetX(Math.max(dx, -THRESHOLD-20));
-  };
-  const onTouchEnd = () => {
-    if(offsetX < -THRESHOLD) { onDelete(); }
-    setOffsetX(0); setSwiping(false); startX.current=null;
-  };
-
-  return (
-    <div style={{position:"relative",overflow:"hidden",borderRadius:8,marginBottom:0}}>
-      {/* Delete reveal */}
-      <div style={{position:"absolute",right:0,top:0,bottom:0,width:THRESHOLD,background:"#ef4444",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:"0 8px 8px 0"}}>
-        <span style={{color:"#fff",fontSize:20}}>🗑</span>
-      </div>
-      {/* Content slides */}
-      <div
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        style={{transform:`translateX(${offsetX}px)`,transition:swiping?"none":"transform 0.2s ease",position:"relative",zIndex:1,background:"transparent"}}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
 export default function WorkoutTracker() {
   const [view, setView] = useState("log");
   const [themeKey, setThemeKey] = useState(()=>localStorage.getItem("wl_theme")||"light");
@@ -1363,8 +1328,7 @@ export default function WorkoutTracker() {
               <div style={{textAlign:"center",padding:"60px 0",color:T.border,fontSize:15,letterSpacing:"0.1em"}}>NO SESSIONS LOGGED YET</div>
             ):filteredSessions.length===0?null:(
               filteredSessions.map(session=>(
-                <SwipeToDelete key={session.id} onDelete={()=>deleteSession(session.id)} T={T}>
-                  <div style={{marginBottom:28}}>
+                <div key={session.id} style={{marginBottom:28}}>
                   <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                     <span style={{fontFamily:T.fontDisplay,fontSize:24,letterSpacing:"0.06em",color:T.accent}}>{session.name==="Rest Day"?"😴 Rest Day":session.name}</span>
                     <span style={{fontSize:13,color:T.muted}}>{fmtDate(session.date)}</span>
@@ -1399,8 +1363,7 @@ export default function WorkoutTracker() {
                       </div>
                     </div>
                   ))}
-                  </div>
-                </SwipeToDelete>
+                </div>
               ))
             )}
             {/* File backup / restore */}
