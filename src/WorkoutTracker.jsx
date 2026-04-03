@@ -39,11 +39,13 @@ function SetRow({ set, idx, onUpdate, onDelete, T, onRestartTimer }) {
       <span style={{fontFamily:T.fontDisplay,fontSize:18,color:T.timerIdle,width:20,textAlign:"center"}}>{idx+1}</span>
       <input type="number" value={set.weight} placeholder="lbs"
         onChange={e=>onUpdate({...set,weight:e.target.value})}
-        style={{width:64,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none",textDecoration:done?"line-through":"none"}}/>
+        disabled={done}
+        style={{width:64,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none",textDecoration:done?"line-through":"none",cursor:done?"not-allowed":"text"}}/>
       <span style={{color:T.dimmer,fontSize:15}}>×</span>
       <input type="number" value={set.reps} placeholder="reps"
         onChange={e=>onUpdate({...set,reps:e.target.value})}
-        style={{width:54,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none",textDecoration:done?"line-through":"none"}}/>
+        disabled={done}
+        style={{width:54,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none",textDecoration:done?"line-through":"none",cursor:done?"not-allowed":"text"}}/>
       <input value={set.note} placeholder="note"
         onChange={e=>onUpdate({...set,note:e.target.value})}
         style={{width:80,minWidth:0,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.borderSubtle}`,color:T.textSecondary,fontSize:14,fontFamily:"inherit",outline:"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}/>
