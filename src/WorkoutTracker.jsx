@@ -705,6 +705,7 @@ export default function WorkoutTracker() {
   const [timerBase, setTimerBase] = useState(60);
   const [timerRem, setTimerRem] = useState(60);
   const intRef = useRef(null);
+  const timerEndAtRef = useRef(null);
 
   useEffect(()=>{localStorage.setItem("wl_sessions2",JSON.stringify(sessions));},[sessions]);
   useEffect(()=>{localStorage.setItem("wl_custom_ex",JSON.stringify(customExercises));},[customExercises]);
@@ -808,13 +809,30 @@ export default function WorkoutTracker() {
   useEffect(()=>{
     if(timerActive){
       intRef.current=setInterval(()=>{
-        setTimerRem(r=>{
-          if(r<=1){clearInterval(intRef.current);setTimerActive(false);beep();return 0;}
-          return r-1;
-        });
-      },1000);
+        const remaining=Math.ceil((timerEndAtRef.current-Date.now())/1000);
+        if(remaining<=0){clearInterval(intRef.current);setTimerActive(false);setTimerRem(0);beep();return;}
+        setTimerRem(remaining);
+      },500);
     } else clearInterval(intRef.current);
     return ()=>clearInterval(intRef.current);
+  },[timerActive]);
+
+  // Catch-up handler: fire bell immediately if timer expired while app was backgrounded
+  useEffect(()=>{
+    const onVisible=()=>{
+      if(document.visibilityState!=="visible"||!timerActive||!timerEndAtRef.current) return;
+      const remaining=Math.ceil((timerEndAtRef.current-Date.now())/1000);
+      if(remaining<=0){
+        clearInterval(intRef.current);
+        setTimerActive(false);
+        setTimerRem(0);
+        beep();
+      } else {
+        setTimerRem(remaining);
+      }
+    };
+    document.addEventListener("visibilitychange",onVisible);
+    return ()=>document.removeEventListener("visibilitychange",onVisible);
   },[timerActive]);
 
   const beep=()=>{
@@ -836,24 +854,39 @@ export default function WorkoutTracker() {
       bell(1320,0,    0.8, 0.25);
       bell(880, 0.08, 1.0, 0.2);
     }catch{}
+    // Vibration fallback (works even when audio is blocked in background)
+    try{navigator.vibrate?.([300,150,300,150,300]);}catch{}
+    // Native notification via SW (fires even while app is backgrounded)
+    if(Notification.permission==="granted"&&"serviceWorker" in navigator){
+      navigator.serviceWorker.ready.then(reg=>{
+        reg.showNotification("Rest Complete!",{
+          body:"Time to get back to lifting.",
+          icon:"/icon-192.png",
+          vibrate:[300,150,300],
+          tag:"rest-timer",
+          renotify:false,
+        });
+      }).catch(()=>{});
+    }
   };
 
-  const startTimer=()=>{setTimerBase(timerInput);setTimerRem(timerInput);setTimerActive(true);};
-  const stopTimer=()=>{setTimerActive(false);setTimerRem(timerInput);setTimerBase(timerInput);};
+  const startTimer=()=>{
+    if(Notification.permission==="default") Notification.requestPermission();
+    timerEndAtRef.current=Date.now()+timerInput*1000;
+    setTimerBase(timerInput);setTimerRem(timerInput);setTimerActive(true);
+  };
+  const stopTimer=()=>{timerEndAtRef.current=null;setTimerActive(false);setTimerRem(timerInput);setTimerBase(timerInput);};
   const restartTimer=()=>{
-    // Clear any existing interval directly
     clearInterval(intRef.current);
-    // Reset time
+    timerEndAtRef.current=Date.now()+timerInput*1000;
     setTimerBase(timerInput);
     setTimerRem(timerInput);
-    // If already active, restart interval manually since setTimerActive(true) won't re-trigger useEffect
     if(timerActive){
       intRef.current=setInterval(()=>{
-        setTimerRem(r=>{
-          if(r<=1){clearInterval(intRef.current);setTimerActive(false);beep();return 0;}
-          return r-1;
-        });
-      },1000);
+        const remaining=Math.ceil((timerEndAtRef.current-Date.now())/1000);
+        if(remaining<=0){clearInterval(intRef.current);setTimerActive(false);setTimerRem(0);beep();return;}
+        setTimerRem(remaining);
+      },500);
     } else {
       setTimerActive(true);
     }
