@@ -991,8 +991,7 @@ export default function WorkoutTracker() {
   return (
     <div style={{minHeight:"100vh",background:T.bg,fontFamily:T.fontBody,color:T.textPrimary}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Exo+2:wght@300;400;600&family=Fira+Code:wght@300;400;500&family=Rajdhani:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500&family=Playfair+Display:wght@400;700&family=Courier+Prime:wght@400;700&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0;}
+*{box-sizing:border-box;margin:0;padding:0;}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:${T.bg}}::-webkit-scrollbar-thumb{background:${T.scrollThumb};border-radius:2px}
         input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
         .fade{animation:fi 0.25s ease}
