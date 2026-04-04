@@ -1,4 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
+import { LocalNotifications } from "@capacitor/local-notifications";
 
 const MUSCLE_GROUPS = ["Chest","Back","Shoulders","Biceps","Triceps","Legs","Glutes","Core","Full Body"];
 const PRESETS = {
@@ -165,7 +169,7 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
 
 function TrendsView({ sessions, T, restDays }) {
   // --- Date range (default: last 7 days) ---
-  const toDateStr = (d) => d.toISOString().slice(0, 10);
+  const toDateStr = (d) => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
   const todayStr = toDateStr(new Date());
   const weekAgoStr = toDateStr(new Date(Date.now() - 6 * 86400000));
 
@@ -194,7 +198,7 @@ function TrendsView({ sessions, T, restDays }) {
 
   // Filter sessions to date range (inclusive)
   const filteredSessions = sessions.filter(s => {
-    const d = s.date.slice(0, 10);
+    const d = toDateStr(new Date(s.date));
     return d >= rangeStart && d <= rangeEnd;
   });
 
@@ -392,7 +396,7 @@ function TrendsView({ sessions, T, restDays }) {
 
   // --- Heatmap: last 52 weeks ---
   const heatmapDays = (() => {
-    const workoutDays = new Set(sessions.map(s=>s.date.slice(0,10)));
+    const workoutDays = new Set(sessions.map(s=>toDateStr(new Date(s.date))));
     const restDaySet  = new Set(restDays);
     const days = [];
     const today = new Date();
@@ -404,7 +408,7 @@ function TrendsView({ sessions, T, restDays }) {
     start.setDate(start.getDate() - start.getDay());
     const cur = new Date(start);
     while(cur <= today) {
-      const str = cur.toISOString().slice(0,10);
+      const str = toDateStr(cur);
       days.push({ date: str, active: workoutDays.has(str), rest: restDaySet.has(str) && !workoutDays.has(str), future: cur > today });
       cur.setDate(cur.getDate()+1);
     }
@@ -618,7 +622,8 @@ export default function WorkoutTracker() {
   const [milestoneBanner, setMilestoneBanner] = useState(null); // {days, message}
   const [summary, setSummary] = useState(null); // saved session object + prs
 
-  const toDateStr = (d) => d.toISOString().slice(0,10);
+  const toDateStr = (d) => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
+  const sessionDateStr = (s) => toDateStr(new Date(s.date));
   const [histRangeStart, setHistRangeStart] = useState(()=>toDateStr(new Date(Date.now()-6*86400000)));
   const [histRangeEnd,   setHistRangeEnd]   = useState(()=>toDateStr(new Date()));
   const [histPreset,     setHistPreset]      = useState("7d");
@@ -638,24 +643,69 @@ export default function WorkoutTracker() {
     setHistRangeEnd(end);
   };
 
+  useEffect(()=>{ if(view==="history"&&histPreset) applyHistPreset(histPreset); },[view]);
+
   const filteredSessions = sessions.filter(s=>{
-    const d = s.date.slice(0,10);
+    const d = sessionDateStr(s);
     return d >= histRangeStart && d <= histRangeEnd;
   });
 
-  const saveBackup = () => {
+  const buildBackupB64 = () => {
     const payload = { sessions, customExercises, templates, exportedAt: new Date().toISOString(), version: 1 };
     const json = JSON.stringify(payload);
-    // Encode as base64 for a minimal "zip-like" container
-    const b64 = btoa(unescape(encodeURIComponent(json)));
-    const blob = new Blob([b64], { type: "application/octet-stream" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const dateStr = new Date().toISOString().slice(0,10);
-    a.href = url;
-    a.download = `iron-log-backup-${dateStr}.ilbak`;
-    a.click();
-    URL.revokeObjectURL(url);
+    return btoa(unescape(encodeURIComponent(json)));
+  };
+
+  const backupFileName = () => `iron-log-backup-${new Date().toISOString().slice(0,10)}.ilbak`;
+
+  const saveBackup = async () => {
+    const b64 = buildBackupB64();
+    const fileName = backupFileName();
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Filesystem.writeFile({ path: fileName, data: b64, directory: Directory.External, encoding: Encoding.UTF8 });
+        setRestoreMsg({ type: "success", text: `Saved: ${fileName}` });
+        setTimeout(() => setRestoreMsg(null), 4000);
+      } catch (err) {
+        setRestoreMsg({ type: "error", text: "Could not save backup" });
+        setTimeout(() => setRestoreMsg(null), 4000);
+      }
+    } else {
+      const blob = new Blob([b64], { type: "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = fileName; a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const shareBackup = async () => {
+    const b64 = buildBackupB64();
+    const fileName = backupFileName();
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { uri } = await Filesystem.writeFile({ path: fileName, data: b64, directory: Directory.Cache, encoding: Encoding.UTF8 });
+        await Share.share({ title: "Iron Log Backup", files: [uri] });
+      } catch (err) {
+        if (err?.message !== "Share canceled") setRestoreMsg({ type: "error", text: "Could not share backup" });
+        setTimeout(() => setRestoreMsg(null), 4000);
+      }
+    } else {
+      const blob = new Blob([b64], { type: "application/octet-stream" });
+      const file = new File([blob], fileName, { type: "application/octet-stream" });
+      try {
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: "Iron Log Backup" });
+        } else { throw new Error("unsupported"); }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = fileName; a.click();
+          URL.revokeObjectURL(url);
+        }
+      }
+    }
   };
 
   const restoreBackup = (e) => {
@@ -810,7 +860,11 @@ export default function WorkoutTracker() {
     if(timerActive){
       intRef.current=setInterval(()=>{
         const remaining=Math.ceil((timerEndAtRef.current-Date.now())/1000);
-        if(remaining<=0){clearInterval(intRef.current);setTimerActive(false);setTimerRem(0);beep();return;}
+        if(remaining<=0){
+          clearInterval(intRef.current);setTimerActive(false);setTimerRem(0);
+          if(Capacitor.isNativePlatform()) LocalNotifications.cancel({notifications:[{id:1}]}).catch(()=>{});
+          beep();return;
+        }
         setTimerRem(remaining);
       },500);
     } else clearInterval(intRef.current);
@@ -870,21 +924,45 @@ export default function WorkoutTracker() {
     }
   };
 
-  const startTimer=()=>{
-    if(Notification.permission==="default") Notification.requestPermission();
+  const startTimer=async()=>{
     timerEndAtRef.current=Date.now()+timerInput*1000;
     setTimerBase(timerInput);setTimerRem(timerInput);setTimerActive(true);
+    if(Capacitor.isNativePlatform()){
+      try{
+        await LocalNotifications.requestPermissions();
+        await LocalNotifications.schedule({notifications:[{
+          id:1,title:"Rest Complete!",body:"Time to get back to lifting.",
+          schedule:{at:new Date(Date.now()+timerInput*1000)},sound:null,
+        }]});
+      }catch{}
+    } else {
+      if(Notification.permission==="default") Notification.requestPermission();
+    }
   };
-  const stopTimer=()=>{timerEndAtRef.current=null;setTimerActive(false);setTimerRem(timerInput);setTimerBase(timerInput);};
+  const stopTimer=()=>{
+    timerEndAtRef.current=null;setTimerActive(false);setTimerRem(timerInput);setTimerBase(timerInput);
+    if(Capacitor.isNativePlatform()) LocalNotifications.cancel({notifications:[{id:1}]}).catch(()=>{});
+  };
   const restartTimer=()=>{
     clearInterval(intRef.current);
     timerEndAtRef.current=Date.now()+timerInput*1000;
     setTimerBase(timerInput);
     setTimerRem(timerInput);
+    if(Capacitor.isNativePlatform()){
+      LocalNotifications.cancel({notifications:[{id:1}]}).catch(()=>{});
+      LocalNotifications.schedule({notifications:[{
+        id:1,title:"Rest Complete!",body:"Time to get back to lifting.",
+        schedule:{at:new Date(Date.now()+timerInput*1000)},sound:null,
+      }]}).catch(()=>{});
+    }
     if(timerActive){
       intRef.current=setInterval(()=>{
         const remaining=Math.ceil((timerEndAtRef.current-Date.now())/1000);
-        if(remaining<=0){clearInterval(intRef.current);setTimerActive(false);setTimerRem(0);beep();return;}
+        if(remaining<=0){
+          clearInterval(intRef.current);setTimerActive(false);setTimerRem(0);
+          if(Capacitor.isNativePlatform()) LocalNotifications.cancel({notifications:[{id:1}]}).catch(()=>{});
+          beep();return;
+        }
         setTimerRem(remaining);
       },500);
     } else {
@@ -983,8 +1061,14 @@ export default function WorkoutTracker() {
   const deleteSession=(id)=>setSessions(prev=>prev.filter(s=>s.id!==id));
 
   const logRestDay=()=>{
-    const today = new Date().toISOString().slice(0,10);
-    if(!restDays.includes(today)) setRestDays(prev=>[...prev, today]);
+    const today = toDateStr(new Date());
+    if(!restDays.includes(today)){
+      setRestDays(prev=>[...prev, today]);
+      setRestoreMsg({type:"success",text:"Rest day logged"});
+    } else {
+      setRestoreMsg({type:"success",text:"Already logged for today"});
+    }
+    setTimeout(()=>setRestoreMsg(null),3000);
   };
   const timerPct=(timerActive||timerRem<timerBase)?((timerRem/timerBase)*100):100;
 
@@ -1403,13 +1487,19 @@ export default function WorkoutTracker() {
             {/* File backup / restore */}
             <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"16px 18px",marginTop:24}}>
               <div style={{fontSize:12,letterSpacing:"0.14em",color:T.dimmer,textTransform:"uppercase",marginBottom:12}}>Backup & Restore</div>
-              <div style={{display:"flex",gap:10,marginBottom:restoreMsg?10:0}}>
-                <button onClick={saveBackup}
-                  style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:"none",color:T.accentText,fontSize:13,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:500,outline:"none",transition:"all 0.2s"}}>
-                  ↓ Save Backup
-                </button>
+              <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:restoreMsg?10:0}}>
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={saveBackup}
+                    style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:"none",color:T.accentText,fontSize:13,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:500,outline:"none",transition:"all 0.2s"}}>
+                    ↓ Save Backup
+                  </button>
+                  <button onClick={shareBackup}
+                    style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:"none",color:T.accentText,fontSize:13,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:500,outline:"none",transition:"all 0.2s"}}>
+                    ↑ Share Backup
+                  </button>
+                </div>
                 <button onClick={()=>fileInputRef.current?.click()}
-                  style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:"transparent",border:`1px solid ${T.border}`,color:T.accent,fontSize:13,letterSpacing:"0.08em",textTransform:"uppercase",outline:"none",transition:"all 0.2s"}}>
+                  style={{padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:"transparent",border:`1px solid ${T.border}`,color:T.accent,fontSize:13,letterSpacing:"0.08em",textTransform:"uppercase",outline:"none",transition:"all 0.2s"}}>
                   ↑ Restore
                 </button>
                 <input ref={fileInputRef} type="file" accept=".ilbak" onChange={restoreBackup} style={{display:"none"}}/>
