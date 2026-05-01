@@ -22,45 +22,36 @@ const fmtDate = (iso) => new Date(iso).toLocaleDateString("en-US",{weekday:"shor
 const uid = () => Math.random().toString(36).slice(2,9);
 
 const THEMES = {
-  void:    { name:"Void",      bg:"#0a0a0f", surface:"#0e0e1a", surfaceDeep:"#0d0d18", border:"#1e1e2e", borderSubtle:"#111", accent:"#a78bfa", accentDim:"#4c1d95", accentDim2:"#5b21b6", accentText:"#e9d5ff", muted:"#444", dimmer:"#333", dimmest:"#252535", timerIdle:"#3d3d5c", timerActive:"#a78bfa", textPrimary:"#e2e8f0", textSecondary:"#666", scrollThumb:"#2a2a3e", selectBg:"#1a1a2e", inputBg:"#161620",
-    fontDisplay:"'Orbitron',sans-serif", fontMono:"'Share Tech Mono',monospace", fontBody:"'Share Tech Mono',monospace", isLight:false },
-  ember:   { name:"Ember",     bg:"#0f0a08", surface:"#1a100a", surfaceDeep:"#150d08", border:"#2e1a0e", borderSubtle:"#1a0e08", accent:"#fb923c", accentDim:"#7c2d12", accentDim2:"#9a3412", accentText:"#fed7aa", muted:"#4a3020", dimmer:"#3a2010", dimmest:"#2a1a0e", timerIdle:"#5c3010", timerActive:"#fb923c", textPrimary:"#fde8d0", textSecondary:"#6a4030", scrollThumb:"#3e2010", selectBg:"#1a1008", inputBg:"#180e08",
-    fontDisplay:"'Bebas Neue',sans-serif", fontMono:"'DM Mono',monospace", fontBody:"'DM Mono',monospace", isLight:false },
-  arctic:  { name:"Arctic",    bg:"#08100f", surface:"#0d1a18", surfaceDeep:"#0a1614", border:"#1a2e2a", borderSubtle:"#111f1d", accent:"#2dd4bf", accentDim:"#0d4a42", accentDim2:"#0f5c52", accentText:"#99f6e4", muted:"#1e3a36", dimmer:"#162e2a", dimmest:"#122420", timerIdle:"#1a4040", timerActive:"#2dd4bf", textPrimary:"#d0f0ec", textSecondary:"#305050", scrollThumb:"#1e3a36", selectBg:"#0d1a18", inputBg:"#0a1614",
-    fontDisplay:"'Exo 2',sans-serif", fontMono:"'Fira Code',monospace", fontBody:"'Fira Code',monospace", isLight:false },
-  steel:   { name:"Steel",     bg:"#0a0c10", surface:"#10141c", surfaceDeep:"#0d1018", border:"#1e2430", borderSubtle:"#141820", accent:"#60a5fa", accentDim:"#1e3a6e", accentDim2:"#1e4a8a", accentText:"#bfdbfe", muted:"#2a3448", dimmer:"#1e2838", dimmest:"#182030", timerIdle:"#203050", timerActive:"#60a5fa", textPrimary:"#dce8f8", textSecondary:"#3a5070", scrollThumb:"#2a3a54", selectBg:"#10141c", inputBg:"#0d1018",
-    fontDisplay:"'Rajdhani',sans-serif", fontMono:"'JetBrains Mono',monospace", fontBody:"'JetBrains Mono',monospace", isLight:false },
-  rose:    { name:"Rose",      bg:"#100a0d", surface:"#1a0d12", surfaceDeep:"#160a0f", border:"#2e1220", borderSubtle:"#1a0d14", accent:"#f472b6", accentDim:"#6d1a3a", accentDim2:"#8a1a48", accentText:"#fce7f3", muted:"#3a1828", dimmer:"#2a1020", dimmest:"#201018", timerIdle:"#4a1030", timerActive:"#f472b6", textPrimary:"#f8d8e8", textSecondary:"#5a2a3a", scrollThumb:"#3e1828", selectBg:"#1a0d12", inputBg:"#160a0f",
-    fontDisplay:"'Playfair Display',serif", fontMono:"'Courier Prime',monospace", fontBody:"'Courier Prime',monospace", isLight:false },
-  light:   { name:"Light",     bg:"#f4f1ec", surface:"#fffefa", surfaceDeep:"#edeae4", border:"#d4cfc7", borderSubtle:"#e8e4dd", accent:"#1a1a2e", accentDim:"#2d2d4a", accentDim2:"#3d3d5c", accentText:"#fffefa", muted:"#8a8478", dimmer:"#6b6560", dimmest:"#c4bfb8", timerIdle:"#9a9490", timerActive:"#1a1a2e", textPrimary:"#1a1714", textSecondary:"#6b6560", scrollThumb:"#c4bfb8", selectBg:"#fffefa", inputBg:"#f4f1ec",
-    fontDisplay:"'Bebas Neue',sans-serif", fontMono:"'DM Mono',monospace", fontBody:"'DM Mono',monospace", isLight:true },
+  light: { name:"Light", bg:"#f4f1ec", surface:"#fffefa", surfaceDeep:"#edeae4", border:"#d4cfc7", borderSubtle:"#e8e4dd", accent:"#1a1a2e", accentDim:"#2d2d4a", accentDim2:"#3d3d5c", accentText:"#fffefa", muted:"#8a8478", dimmer:"#6b6560", dimmest:"#c4bfb8", timerIdle:"#9a9490", timerActive:"#1a1a2e", textPrimary:"#1a1714", textSecondary:"#6b6560", scrollThumb:"#c4bfb8", selectBg:"#fffefa", inputBg:"#f4f1ec",
+    fontDisplay:"'Bebas Neue',sans-serif", fontMono:"'DM Mono',monospace", fontBody:"'Inter',-apple-system,system-ui,sans-serif", isLight:true },
 };
 
 function SetRow({ set, idx, onUpdate, onDelete, T, onRestartTimer }) {
   const done = !!set.done;
   return (
-    <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.borderSubtle}`,opacity:done?0.5:1,transition:"opacity 0.2s"}}>
-      <span style={{fontFamily:T.fontDisplay,fontSize:18,color:T.timerIdle,width:20,textAlign:"center"}}>{idx+1}</span>
-      <input type="number" value={set.weight} placeholder="lbs"
-        onChange={e=>onUpdate({...set,weight:e.target.value})}
-        disabled={done}
-        style={{width:64,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none",textDecoration:done?"line-through":"none",cursor:done?"not-allowed":"text"}}/>
-      <span style={{color:T.dimmer,fontSize:15}}>×</span>
-      <input type="number" value={set.reps} placeholder="reps"
-        onChange={e=>onUpdate({...set,reps:e.target.value})}
-        disabled={done}
-        style={{width:54,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:"inherit",outline:"none",textDecoration:done?"line-through":"none",cursor:done?"not-allowed":"text"}}/>
-      <input value={set.note} placeholder="note"
-        onChange={e=>onUpdate({...set,note:e.target.value})}
-        style={{width:80,minWidth:0,padding:"5px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.borderSubtle}`,color:T.textSecondary,fontSize:14,fontFamily:"inherit",outline:"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}/>
-      <button onClick={()=>{ const nowDone=!done; onUpdate({...set,done:nowDone}); if(nowDone){ onRestartTimer?.(); try{navigator.vibrate&&navigator.vibrate(40);}catch{} } }}
-        style={{width:26,height:26,borderRadius:6,border:`2px solid ${done?T.accent:T.border}`,background:done?T.accent:"transparent",cursor:"pointer",outline:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s",padding:0}}
-        title={done?"Mark incomplete":"Mark complete"}>
-        {done&&<span style={{color:T.isLight?"#fff":T.accentText,fontSize:14,lineHeight:1,fontWeight:"bold"}}>✓</span>}
-      </button>
-      <button onClick={onDelete}
-        style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:19,lineHeight:1,padding:"0 4px",transition:"color 0.15s"}}
-        onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color=T.dimmest}>×</button>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.borderSubtle}`,opacity:done?0.5:1,transition:"opacity 0.2s"}}>
+      <span style={{fontFamily:T.fontDisplay,fontSize:18,color:T.timerIdle,width:20,textAlign:"center",flexShrink:0}}>{idx+1}</span>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <input type="number" value={set.weight} placeholder="lbs"
+          onChange={e=>onUpdate({...set,weight:e.target.value})}
+          disabled={done}
+          style={{width:74,padding:"6px 10px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:T.fontMono,outline:"none",textDecoration:done?"line-through":"none",cursor:done?"not-allowed":"text"}}/>
+        <span style={{color:T.dimmer,fontSize:15}}>×</span>
+        <input type="number" value={set.reps} placeholder="reps"
+          onChange={e=>onUpdate({...set,reps:e.target.value})}
+          disabled={done}
+          style={{width:64,padding:"6px 10px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:T.fontMono,outline:"none",textDecoration:done?"line-through":"none",cursor:done?"not-allowed":"text"}}/>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
+        <button onClick={()=>{ const nowDone=!done; onUpdate({...set,done:nowDone}); if(nowDone){ onRestartTimer?.(); try{navigator.vibrate&&navigator.vibrate(40);}catch{} } }}
+          style={{width:26,height:26,borderRadius:6,border:`2px solid ${done?T.accent:T.border}`,background:done?T.accent:"transparent",cursor:"pointer",outline:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s",padding:0}}
+          title={done?"Mark incomplete":"Mark complete"}>
+          {done&&<span style={{color:T.isLight?"#fff":T.accentText,fontSize:14,lineHeight:1,fontWeight:"bold"}}>✓</span>}
+        </button>
+        <button onClick={onDelete}
+          style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:19,lineHeight:1,padding:"0 4px",transition:"color 0.15s"}}
+          onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color=T.dimmest}>×</button>
+      </div>
     </div>
   );
 }
@@ -87,8 +78,16 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
 
   const addSet = () => {
     const last = ex.sets[ex.sets.length - 1];
-    sync({sets:[...ex.sets,{id:uid(),weight:last?.weight||"",reps:last?.reps||"",note:""}]});
+    sync({sets:[...ex.sets,{id:uid(),weight:last?.weight||"",reps:last?.reps||""}]});
   };
+
+  const best1RM = ex.sets.reduce((max, s) => {
+    const w = parseFloat(s.weight) || 0;
+    const r = parseInt(s.reps) || 0;
+    if (!w || !r) return max;
+    const e = w * (1 + r / 30);
+    return e > max ? e : max;
+  }, 0);
   const updateSet = (id,u) => sync({sets:ex.sets.map(s=>s.id===id?u:s)});
   const deleteSet = (id) => sync({sets:ex.sets.filter(s=>s.id!==id)});
 
@@ -133,12 +132,16 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
         </div>
       </div>
       <div style={{padding:"8px 14px 4px"}}>
-        <div style={{display:"flex",gap:8,marginBottom:4}}>
-          <span style={{fontSize:12,color:T.dimmest,width:20}}>#</span>
-          <span style={{fontSize:12,color:T.dimmest,width:64,textAlign:"center",letterSpacing:"0.08em"}}>WEIGHT</span>
-          <span style={{fontSize:12,color:T.dimmest,width:12}}></span>
-          <span style={{fontSize:12,color:T.dimmest,width:54,textAlign:"center",letterSpacing:"0.08em"}}>REPS</span>
-          <span style={{fontSize:12,color:T.dimmest,flex:1,letterSpacing:"0.08em"}}>NOTE</span>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:6}}>
+          <span style={{fontSize:12,color:T.dimmest,width:20,flexShrink:0}}>#</span>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:12,color:T.dimmest,width:74,textAlign:"center",letterSpacing:"0.08em"}}>WEIGHT</span>
+            <span style={{width:12}}/>
+            <span style={{fontSize:12,color:T.dimmest,width:64,textAlign:"center",letterSpacing:"0.08em"}}>REPS</span>
+          </div>
+          <span style={{fontSize:11,color:T.dimmer,letterSpacing:"0.08em",padding:"3px 8px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.borderSubtle}`,whiteSpace:"nowrap",flexShrink:0}}>
+            1RM <span style={{color:best1RM>0?T.accent:T.dimmest,marginLeft:4}}>{best1RM>0?`${Math.round(best1RM)} lbs`:"—"}</span>
+          </span>
         </div>
         {ex.sets.length===0&&<div style={{padding:"10px 0",color:T.dimmest,fontSize:14,textAlign:"center",letterSpacing:"0.06em"}}>NO SETS — ADD ONE BELOW</div>}
         {ex.sets.map((s,i)=>{
@@ -220,17 +223,43 @@ function TrendsView({ sessions, T, restDays }) {
       return [{ date: s.date, label: fmtDate(s.date), value: bestWeight }];
     });
 
-  // --- Volume chart data: total volume (weight*reps) per muscle group ---
-  const volumeByMuscle = MUSCLE_GROUPS.map(mg => {
-    const total = filteredSessions.reduce((sum, s) => {
-      return sum + s.exercises
-        .filter(e => e.muscleGroup === mg)
-        .reduce((eSum, e) => eSum + e.sets.reduce((sSum, st) => {
-          return sSum + ((parseFloat(st.weight)||0) * (parseInt(st.reps)||0));
-        }, 0), 0);
-    }, 0);
-    return { mg, total };
-  }).filter(d => d.total > 0);
+  // --- Volume trend: weekly volume per muscle group within range ---
+  const volumeTrend = (() => {
+    const start = new Date(rangeStart + "T00:00:00");
+    const end   = new Date(rangeEnd   + "T00:00:00");
+    if (isNaN(start) || isNaN(end) || start > end) return { bins: [], byMg: {}, activeMgs: [] };
+    const cur = new Date(start);
+    cur.setDate(cur.getDate() - cur.getDay()); // snap to Sunday
+    const bins = [];
+    while (cur <= end) {
+      const bs = new Date(cur);
+      const be = new Date(cur); be.setDate(be.getDate() + 6);
+      bins.push({ start: toDateStr(bs), end: toDateStr(be) });
+      cur.setDate(cur.getDate() + 7);
+    }
+    const byMg = {};
+    MUSCLE_GROUPS.forEach(mg => { byMg[mg] = bins.map(() => 0); });
+    filteredSessions.forEach(s => {
+      const sd = toDateStr(new Date(s.date));
+      const idx = bins.findIndex(b => sd >= b.start && sd <= b.end);
+      if (idx < 0) return;
+      s.exercises.forEach(e => {
+        if (!byMg[e.muscleGroup]) return;
+        const vol = e.sets.reduce((sum, st) =>
+          sum + ((parseFloat(st.weight)||0) * (parseInt(st.reps)||0)), 0);
+        byMg[e.muscleGroup][idx] += vol;
+      });
+    });
+    const activeMgs = MUSCLE_GROUPS.filter(mg => byMg[mg].some(v => v > 0));
+    return { bins, byMg, activeMgs };
+  })();
+
+  const [hiddenMgs, setHiddenMgs] = useState(() => new Set());
+  const toggleMg = mg => setHiddenMgs(prev => {
+    const next = new Set(prev);
+    next.has(mg) ? next.delete(mg) : next.add(mg);
+    return next;
+  });
 
   // Generic SVG line chart
   function LineChart({ data, color, yLabel }) {
@@ -305,37 +334,29 @@ function TrendsView({ sessions, T, restDays }) {
     );
   }
 
-  // Bar chart for volume
-  function BarChart({ data }) {
-    if (!data.length) return (
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:160,color:T.dimmest,fontSize:14,letterSpacing:"0.08em"}}>
-        NO WORKOUT DATA YET
+  // Multi-line chart for volume trend (one line per muscle group)
+  function MultiLineChart({ bins, byMg, activeMgs, hidden }) {
+    const visibleMgs = activeMgs.filter(mg => !hidden.has(mg));
+    if (!bins.length || !activeMgs.length) return (
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:200,color:T.dimmest,fontSize:14,letterSpacing:"0.08em"}}>
+        NO VOLUME DATA IN RANGE
       </div>
     );
-    const W = 560, H = 180, PL = 58, PR = 16, PT = 16, PB = 48;
+    const W = 560, H = 200, PL = 56, PR = 16, PT = 16, PB = 36;
     const cW = W - PL - PR, cH = H - PT - PB;
-    const maxV = Math.max(...data.map(d => d.total));
-    const barW = Math.min(36, (cW / data.length) * 0.6);
-    const gap = cW / data.length;
-    const yTicks = 4;
-    const yTickVals = Array.from({length: yTicks + 1}, (_, i) => (maxV * i / yTicks));
+    const allVals = visibleMgs.flatMap(mg => byMg[mg]);
+    const maxV = visibleMgs.length ? Math.max(...allVals, 1) : 1;
+    const xOf = i => PL + (bins.length === 1 ? cW/2 : (i / (bins.length - 1)) * cW);
     const yOf = v => PT + cH - (v / maxV) * cH;
-    const xOf = i => PL + gap * i + gap / 2;
-
+    const yTicks = 4;
+    const yTickVals = Array.from({length: yTicks+1}, (_, i) => maxV * i / yTicks);
     const fmtK = v => v >= 1000 ? `${(v/1000).toFixed(1)}k` : Math.round(v).toString();
+    const step = Math.max(1, Math.ceil(bins.length / 6));
+    const xLabelIdxs = bins.map((_,i)=>i).filter(i => i % step === 0 || i === bins.length - 1);
 
     return (
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{overflow:"visible"}}>
-        <defs>
-          {data.map(d => (
-            <linearGradient key={d.mg} id={`bg-${d.mg.replace(/\s/g,'')}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={MC[d.mg]} stopOpacity="0.9"/>
-              <stop offset="100%" stopColor={MC[d.mg]} stopOpacity="0.4"/>
-            </linearGradient>
-          ))}
-        </defs>
-        {/* Grid */}
-        {yTickVals.map((v, i) => (
+        {yTickVals.map((v,i) => (
           <g key={i}>
             <line x1={PL} y1={yOf(v)} x2={W-PR} y2={yOf(v)} stroke={T.border} strokeWidth="1" strokeDasharray="3,4"/>
             <text x={PL-6} y={yOf(v)+4} textAnchor="end" fill={T.dimmer} fontSize="12" fontFamily={T.fontMono}>
@@ -343,32 +364,27 @@ function TrendsView({ sessions, T, restDays }) {
             </text>
           </g>
         ))}
-        {/* Y label */}
         <text x={10} y={H/2} textAnchor="middle" fill={T.muted} fontSize="12" fontFamily={T.fontMono}
-          transform={`rotate(-90,10,${H/2})`}>LBS × REPS</text>
-        {/* Bars */}
-        {data.map((d, i) => {
-          const bH = cH - (yOf(d.total) - PT);
-          const by = yOf(d.total);
+          transform={`rotate(-90,10,${H/2})`}>VOLUME</text>
+        {visibleMgs.map(mg => {
+          const series = byMg[mg];
+          const pts = series.map((v,i) => `${xOf(i)},${yOf(v)}`);
           return (
-            <g key={d.mg}>
-              <rect x={xOf(i) - barW/2} y={by} width={barW} height={bH}
-                fill={`url(#bg-${d.mg.replace(/\s/g,'')})`} rx="3"/>
-              <rect x={xOf(i) - barW/2} y={by} width={barW} height={3}
-                fill={MC[d.mg]} rx="2"/>
-              {/* Value label on top */}
-              <text x={xOf(i)} y={by - 5} textAnchor="middle" fill={MC[d.mg]} fontSize="12" fontFamily={T.fontMono}>
-                {fmtK(d.total)}
-              </text>
-              {/* X label */}
-              <text x={xOf(i)} y={H - 4} textAnchor="middle" fill={T.dimmer} fontSize="11" fontFamily={T.fontMono}
-                transform={`rotate(-30,${xOf(i)},${H-4})`}>
-                {d.mg}
-              </text>
-              <title>{d.mg}: {Math.round(d.total).toLocaleString()} lbs×reps</title>
+            <g key={mg}>
+              <path d={`M ${pts.join(" L ")}`} fill="none" stroke={MC[mg]} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" opacity="0.85"/>
+              {series.map((v,i) => v > 0 ? (
+                <circle key={i} cx={xOf(i)} cy={yOf(v)} r="3" fill={MC[mg]} stroke={T.bg} strokeWidth="1.5">
+                  <title>{mg} — week of {bins[i].start}: {Math.round(v).toLocaleString()}</title>
+                </circle>
+              ) : null)}
             </g>
           );
         })}
+        {xLabelIdxs.map(i => (
+          <text key={i} x={xOf(i)} y={H - 4} textAnchor="middle" fill={T.dimmer} fontSize="11" fontFamily={T.fontMono}>
+            {new Date(bins[i].start).toLocaleDateString("en-US",{month:"short",day:"numeric"})}
+          </text>
+        ))}
       </svg>
     );
   }
@@ -574,25 +590,33 @@ function TrendsView({ sessions, T, restDays }) {
         </div>
       </div>
 
-      {/* Volume by Muscle Group */}
+      {/* Volume Trend by Muscle Group */}
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:20}}>
-        <div style={{marginBottom:16}}>
-          <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:4}}>TOTAL VOLUME</div>
-          <div style={{fontSize:14,color:T.muted}}>Cumulative weight × reps by muscle group</div>
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:4}}>VOLUME TREND</div>
+          <div style={{fontSize:14,color:T.muted}}>Weekly weight × reps — tap a muscle group to toggle</div>
         </div>
-        {/* Legend */}
-        {volumeByMuscle.length > 0 && (
-          <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:14}}>
-            {volumeByMuscle.map(d=>(
-              <div key={d.mg} style={{display:"flex",alignItems:"center",gap:5}}>
-                <div style={{width:8,height:8,borderRadius:"50%",background:MC[d.mg]}}/>
-                <span style={{fontSize:12,color:T.muted,letterSpacing:"0.06em"}}>{d.mg}</span>
-              </div>
-            ))}
+        {/* Toggle chips */}
+        {volumeTrend.activeMgs.length > 0 && (
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14}}>
+            {volumeTrend.activeMgs.map(mg => {
+              const off = hiddenMgs.has(mg);
+              return (
+                <button key={mg} onClick={()=>toggleMg(mg)}
+                  style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",borderRadius:14,
+                    background:off?"transparent":MC[mg]+"22",
+                    border:`1px solid ${off?T.border:MC[mg]+"66"}`,
+                    color:off?T.muted:T.textPrimary,
+                    fontSize:12,letterSpacing:"0.04em",cursor:"pointer",fontFamily:"inherit",outline:"none",transition:"all 0.15s"}}>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:off?T.dimmest:MC[mg]}}/>
+                  {mg}
+                </button>
+              );
+            })}
           </div>
         )}
         <div style={{overflowX:"auto"}}>
-          <BarChart data={volumeByMuscle}/>
+          <MultiLineChart bins={volumeTrend.bins} byMg={volumeTrend.byMg} activeMgs={volumeTrend.activeMgs} hidden={hiddenMgs}/>
         </div>
       </div>
 
@@ -603,8 +627,7 @@ function TrendsView({ sessions, T, restDays }) {
 
 export default function WorkoutTracker() {
   const [view, setView] = useState("log");
-  const [themeKey, setThemeKey] = useState(()=>localStorage.getItem("wl_theme")||"light");
-  const T = THEMES[themeKey]||THEMES.void;
+  const T = THEMES.light;
   const [workout, setWorkout] = useState([]);
   const [workoutName, setWorkoutName] = useState("");
   const [workoutNotes, setWorkoutNotes] = useState("");
@@ -759,7 +782,6 @@ export default function WorkoutTracker() {
 
   useEffect(()=>{localStorage.setItem("wl_sessions2",JSON.stringify(sessions));},[sessions]);
   useEffect(()=>{localStorage.setItem("wl_custom_ex",JSON.stringify(customExercises));},[customExercises]);
-  useEffect(()=>{localStorage.setItem("wl_theme",themeKey);},[themeKey]);
   useEffect(()=>{localStorage.setItem("wl_templates",JSON.stringify(templates));},[templates]);
   useEffect(()=>{localStorage.setItem("wl_rest_days",JSON.stringify(restDays));},[restDays]);
 
@@ -1203,22 +1225,6 @@ export default function WorkoutTracker() {
               🔥 {streak} day{streak!==1?"s":""}
             </span>
           )}
-          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-            {/* Light mode toggle */}
-            <button
-              title={T.isLight ? "Switch to dark" : "Switch to light"}
-              onClick={() => setThemeKey(T.isLight ? "void" : "light")}
-              style={{width:28,height:28,borderRadius:"50%",background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,cursor:"pointer",outline:"none",fontSize:17,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
-              {T.isLight ? "🌙" : "☀️"}
-            </button>
-            {/* Theme dots */}
-            <div style={{display:"flex",gap:5}}>
-              {Object.entries(THEMES).filter(([key])=>key!=="light").map(([key,th])=>(
-                <button key={key} title={th.name} onClick={()=>setThemeKey(key)}
-                  style={{width:14,height:14,borderRadius:"50%",background:th.accent,border:themeKey===key?`2px solid ${T.textPrimary}`:"2px solid transparent",cursor:"pointer",outline:"none",transition:"transform 0.15s",transform:themeKey===key?"scale(1.25)":"scale(1)",padding:0}}/>
-              ))}
-            </div>
-          </div>
         </div>
         {/* Row 2: Nav buttons */}
         <div style={{display:"flex"}}>
@@ -1262,7 +1268,7 @@ export default function WorkoutTracker() {
                       </button>
                     ))}
                     <input type="number" value={timerInput} onChange={e=>{const v=Math.max(1,parseInt(e.target.value)||1);setTimerInput(v);if(!timerActive)setTimerRem(v);}}
-                      style={{width:52,padding:"4px 6px",borderRadius:4,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:14,textAlign:"center",fontFamily:"inherit",outline:"none"}}/>
+                      style={{width:52,padding:"4px 6px",borderRadius:4,background:T.inputBg,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:14,textAlign:"center",fontFamily:T.fontMono,outline:"none"}}/>
                   </div>
                   <div style={{display:"flex",gap:6}}>
                     <button onClick={timerActive?stopTimer:startTimer}
@@ -1297,8 +1303,7 @@ export default function WorkoutTracker() {
             {/* Log Rest Day — shown when no exercises added yet */}
             {workout.length===0&&(
               <button onClick={()=>{
-                const today = new Date().toISOString().slice(0,10);
-                if(!restDays.includes(today)) setRestDays(prev=>[...prev,today]);
+                logRestDay();
                 try{navigator.vibrate&&navigator.vibrate(30);}catch{}
               }}
                 style={{width:"100%",padding:"10px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:"transparent",border:`1px dashed ${T.border}`,color:T.dimmer,fontSize:13,letterSpacing:"0.08em",textTransform:"uppercase",outline:"none",transition:"all 0.15s"}}
