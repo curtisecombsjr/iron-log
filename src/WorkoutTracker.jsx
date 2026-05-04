@@ -151,7 +151,7 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
               <SetRow set={s} idx={i} T={T} onUpdate={u=>updateSet(s.id,u)} onDelete={()=>deleteSet(s.id)} onRestartTimer={onAddSet}/>
               {ghost&&(ghost.weight||ghost.reps)&&(
                 <div style={{display:"flex",gap:8,paddingLeft:28,paddingBottom:4,marginTop:-2}}>
-                  <span style={{fontSize:11,color:T.dimmest,fontStyle:"italic",letterSpacing:"0.03em"}}>
+                  <span style={{fontSize:11,color:T.dimmer,fontStyle:"italic",letterSpacing:"0.03em"}}>
                     last: {ghost.weight?`${ghost.weight} lbs`:"—"} × {ghost.reps?`${ghost.reps} reps`:"—"}
                   </span>
                 </div>
@@ -171,20 +171,20 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
 }
 
 function TrendsView({ sessions, T, restDays }) {
-  // --- Date range (default: last 7 days) ---
+  // --- Date range (default: last 30 days) ---
   const toDateStr = (d) => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
   const todayStr = toDateStr(new Date());
-  const weekAgoStr = toDateStr(new Date(Date.now() - 6 * 86400000));
+  const monthAgoStr = toDateStr(new Date(Date.now() - 29 * 86400000));
 
-  const [rangeStart, setRangeStart] = useState(weekAgoStr);
+  const [rangeStart, setRangeStart] = useState(monthAgoStr);
   const [rangeEnd, setRangeEnd] = useState(todayStr);
-  const [activePreset, setActivePreset] = useState("7d");
+  const [activePreset, setActivePreset] = useState("30d");
 
   const applyPreset = (key) => {
     setActivePreset(key);
     const now = new Date();
     const end = toDateStr(now);
-    const starts = { "7d": 6, "30d": 29, "90d": 89, "1y": 364 };
+    const starts = { "14d": 13, "30d": 29, "90d": 89, "1y": 364 };
     if (key === "all") {
       const oldest = sessions.length
         ? toDateStr(new Date(Math.min(...sessions.map(s => new Date(s.date)))))
@@ -396,7 +396,7 @@ function TrendsView({ sessions, T, restDays }) {
   const delta = (firstWeight && lastWeight) ? lastWeight - firstWeight : null;
 
   const PRESETS = [
-    { key:"7d",  label:"7D"  },
+    { key:"14d", label:"14D" },
     { key:"30d", label:"30D" },
     { key:"90d", label:"90D" },
     { key:"1y",  label:"1Y"  },
@@ -511,7 +511,7 @@ function TrendsView({ sessions, T, restDays }) {
             </div>
             {/* Legend */}
             <div style={{display:"flex",alignItems:"center",gap:5,marginTop:8,justifyContent:"flex-end"}}>
-              <span style={{fontSize:10,color:T.dimmer}}>Less</span>
+              <span style={{fontSize:10,color:T.dimmer}}>No workout</span>
               {[T.isLight?"#e8e4dd":T.dimmest, T.isLight?"#bfd9f7":"#1e3a6e", T.accent].map((c,i)=>(
                 <div key={i} style={{width:12,height:12,borderRadius:2,background:c}}/>
               ))}
@@ -630,7 +630,6 @@ export default function WorkoutTracker() {
   const T = THEMES.light;
   const [workout, setWorkout] = useState([]);
   const [workoutName, setWorkoutName] = useState("");
-  const [workoutNotes, setWorkoutNotes] = useState("");
   const [sessions, setSessions] = useState(()=>JSON.parse(localStorage.getItem("wl_sessions2")||"[]"));
   const [restDays, setRestDays] = useState(()=>JSON.parse(localStorage.getItem("wl_rest_days")||"[]"));
   const [customExercises, setCustomExercises] = useState(()=>JSON.parse(localStorage.getItem("wl_custom_ex")||"{}"));
@@ -869,7 +868,6 @@ export default function WorkoutTracker() {
       sets:Array.from({length:e.setCount||1},()=>({id:uid(),weight:"",reps:"",note:""}))
     })));
     setWorkoutName("");
-    setWorkoutNotes("");
   };
 
   const deleteTemplate = (tmplId) => {
@@ -952,9 +950,15 @@ export default function WorkoutTracker() {
     if(Capacitor.isNativePlatform()){
       try{
         await LocalNotifications.requestPermissions();
+        await LocalNotifications.createChannel({
+          id:"rest-timer",name:"Rest Timer",
+          description:"Plays a bell when your rest period is over.",
+          importance:4,sound:"bell.wav",vibration:true,visibility:1,
+        });
         await LocalNotifications.schedule({notifications:[{
           id:1,title:"Rest Complete!",body:"Time to get back to lifting.",
-          schedule:{at:new Date(Date.now()+timerInput*1000)},sound:null,
+          schedule:{at:new Date(Date.now()+timerInput*1000)},
+          channelId:"rest-timer",sound:"bell.wav",
         }]});
       }catch{}
     } else {
@@ -974,7 +978,8 @@ export default function WorkoutTracker() {
       LocalNotifications.cancel({notifications:[{id:1}]}).catch(()=>{});
       LocalNotifications.schedule({notifications:[{
         id:1,title:"Rest Complete!",body:"Time to get back to lifting.",
-        schedule:{at:new Date(Date.now()+timerInput*1000)},sound:null,
+        schedule:{at:new Date(Date.now()+timerInput*1000)},
+        channelId:"rest-timer",sound:"bell.wav",
       }]}).catch(()=>{});
     }
     if(timerActive){
@@ -1056,7 +1061,6 @@ export default function WorkoutTracker() {
     const session={
       id:uid(),date:new Date().toISOString(),
       name:workoutName,
-      notes:workoutNotes.trim(),
       exercises:workout.map(e=>({...e,sets:e.sets.filter(s=>s.weight||s.reps).map(({done,...s})=>s)})).filter(e=>e.sets.length>0)
     };
 
@@ -1074,7 +1078,7 @@ export default function WorkoutTracker() {
       return updated;
     });
 
-    setWorkout([]); setWorkoutName(""); setWorkoutNotes("");
+    setWorkout([]); setWorkoutName("");
     setSaveFlash("success"); setTimeout(()=>setSaveFlash(null),800);
     // Show summary overlay instead of navigating away
     setSummary({session, prs: prsFound});
@@ -1293,12 +1297,6 @@ export default function WorkoutTracker() {
               </select>
               {totalSets>0&&<span style={{fontSize:13,color:T.muted,whiteSpace:"nowrap"}}>{totalSets} SET{totalSets!==1?"S":""}</span>}
             </div>
-
-            {/* Workout notes */}
-            <textarea value={workoutNotes} onChange={e=>setWorkoutNotes(e.target.value)}
-              placeholder="Session notes (how you felt, PRs, anything worth remembering...)"
-              rows={3}
-              style={{width:"100%",padding:"10px 14px",borderRadius:7,background:T.surface,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical",lineHeight:1.5}}/>
 
             {/* Log Rest Day — shown when no exercises added yet */}
             {workout.length===0&&(
