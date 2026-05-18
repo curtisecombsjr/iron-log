@@ -170,7 +170,7 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
   );
 }
 
-function TrendsView({ sessions, T, restDays }) {
+function TrendsView({ sessions, T, restDays, toggleRestDay }) {
   // --- Date range (default: last 30 days) ---
   const toDateStr = (d) => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
   const todayStr = toDateStr(new Date());
@@ -492,20 +492,27 @@ function TrendsView({ sessions, T, restDays }) {
               {/* Week columns */}
               {heatmapWeeks.map((week,wi)=>(
                 <div key={wi} style={{display:"flex",flexDirection:"column",gap:2,marginRight:2}}>
-                  {week.map((day,di)=>(
-                    <div key={di}
-                      title={`${day.date}${day.active?" — workout":""}`}
-                      style={{
-                        width:12,height:12,borderRadius:2,flexShrink:0,
-                        background: day.future ? "transparent"
-                          : day.active ? T.accent
-                          : day.rest ? (T.isLight?"#bfd9f7":"#1e3a6e")
-                          : T.isLight ? "#e8e4dd" : T.dimmest,
-                        opacity: day.future ? 0 : 1,
-                        transition:"background 0.1s",
-                        cursor: day.active?"default":"default",
-                      }}/>
-                  ))}
+                  {week.map((day,di)=>{
+                    const tappable = !day.future && !day.active && toggleRestDay;
+                    const titleSuffix = day.active ? " — workout"
+                      : day.rest ? " — rest day (tap to remove)"
+                      : tappable ? " — tap to mark rest" : "";
+                    return (
+                      <div key={di}
+                        title={`${day.date}${titleSuffix}`}
+                        onClick={tappable ? ()=>toggleRestDay(day.date) : undefined}
+                        style={{
+                          width:12,height:12,borderRadius:2,flexShrink:0,
+                          background: day.future ? "transparent"
+                            : day.active ? T.accent
+                            : day.rest ? (T.isLight?"#bfd9f7":"#1e3a6e")
+                            : T.isLight ? "#e8e4dd" : T.dimmest,
+                          opacity: day.future ? 0 : 1,
+                          transition:"background 0.1s",
+                          cursor: tappable ? "pointer" : "default",
+                        }}/>
+                    );
+                  })}
                 </div>
               ))}
             </div>
@@ -1096,6 +1103,14 @@ export default function WorkoutTracker() {
     }
     setTimeout(()=>setRestoreMsg(null),3000);
   };
+  const toggleRestDay=(dateStr)=>{
+    const hasWorkout = sessions.some(s=>toDateStr(new Date(s.date))===dateStr);
+    if(hasWorkout) return;
+    setRestDays(prev => prev.includes(dateStr)
+      ? prev.filter(d=>d!==dateStr)
+      : [...prev, dateStr]);
+    try{navigator.vibrate&&navigator.vibrate(20);}catch{}
+  };
   const timerPct=(timerActive||timerRem<timerBase)?((timerRem/timerBase)*100):100;
 
   return (
@@ -1530,7 +1545,7 @@ export default function WorkoutTracker() {
         )}
 
         {view==="trends"&&(
-          <TrendsView sessions={sessions} T={T} restDays={restDays}/>
+          <TrendsView sessions={sessions} T={T} restDays={restDays} toggleRestDay={toggleRestDay}/>
         )}
       </div>
     </div>
