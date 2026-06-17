@@ -21,13 +21,16 @@ cd ~/Projects/android/iron-log
 npm run build                                                          # vite → dist/
 npx cap sync android                                                   # dist/ → android/app/src/main/assets/public
 cd android && JAVA_HOME=/usr/lib/jvm/zulu-21 ./gradlew assembleDebug   # → app-debug.apk
+cd app/build/outputs/apk/debug && cp app-debug.apk iron-log.apk        # MANDATORY rename — Curtis uploads iron-log.apk
 ```
 
-**Output APK:** `android/app/build/outputs/apk/debug/app-debug.apk`
+**Output APK Curtis installs:** `android/app/build/outputs/apk/debug/iron-log.apk`
+
+**Gotcha — the rename is NOT optional.** Gradle only ever writes `app-debug.apk`. Curtis's sideload workflow uploads **`iron-log.apk`**, a copy in the *same dir*. If you skip the `cp`, `iron-log.apk` stays stale and Curtis installs an OLD build — the change "doesn't show up" even though the source/build are correct. Always `cp app-debug.apk iron-log.apk` as the final build step and verify the timestamp updated. (Burned us 2026-06-17: the template-delete confirm was in `app-debug.apk` but `iron-log.apk` was a month-old build.)
 
 **Gotcha — JDK version:** Capacitor needs JDK 21. System default is JDK 17 (`/usr/bin/java`). You MUST pass `JAVA_HOME=/usr/lib/jvm/zulu-21` to gradle or it fails with `invalid source release: 21`.
 
-Tell Curtis the final APK path when done so he can `adb push` or just transfer it.
+Tell Curtis the final APK path (`…/debug/iron-log.apk`) when done so he can `adb push` or just transfer it.
 
 ## Before ending a session
 
