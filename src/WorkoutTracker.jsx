@@ -878,6 +878,8 @@ export default function WorkoutTracker() {
   };
 
   const deleteTemplate = (tmplId) => {
+    const tmpl = templates.find(t=>t.id===tmplId);
+    if(!confirm(`Delete template "${tmpl?.name ?? ""}"? This can't be undone.`)) return;
     setTemplates(prev=>prev.filter(t=>t.id!==tmplId));
     setTemplateFlash("deleted");
     setTimeout(()=>setTemplateFlash(null),1800);
