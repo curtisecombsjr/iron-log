@@ -677,6 +677,7 @@ export default function WorkoutTracker() {
   const [prBanner, setPrBanner] = useState(null); // {exerciseName, weight}
   const [milestoneBanner, setMilestoneBanner] = useState(null); // {days, message}
   const [summary, setSummary] = useState(null); // saved session object + prs
+  const draftRestored = useRef(false); // gate: don't persist the draft until we've restored any existing one
 
   const toDateStr = (d) => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
   const sessionDateStr = (s) => toDateStr(new Date(s.date));
