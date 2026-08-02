@@ -171,14 +171,14 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
 }
 
 function TrendsView({ sessions, T, restDays, toggleRestDay }) {
-  // --- Date range (default: last 30 days) ---
+  // --- Date range (default: last 1 year) ---
   const toDateStr = (d) => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
   const todayStr = toDateStr(new Date());
-  const monthAgoStr = toDateStr(new Date(Date.now() - 29 * 86400000));
+  const yearAgoStr = toDateStr(new Date(Date.now() - 364 * 86400000));
 
-  const [rangeStart, setRangeStart] = useState(monthAgoStr);
+  const [rangeStart, setRangeStart] = useState(yearAgoStr);
   const [rangeEnd, setRangeEnd] = useState(todayStr);
-  const [activePreset, setActivePreset] = useState("30d");
+  const [activePreset, setActivePreset] = useState("1y");
 
   const applyPreset = (key) => {
     setActivePreset(key);
@@ -254,7 +254,8 @@ function TrendsView({ sessions, T, restDays, toggleRestDay }) {
     return { bins, byMg, activeMgs };
   })();
 
-  const [hiddenMgs, setHiddenMgs] = useState(() => new Set());
+  // Default to a single muscle group selected — hide every active group except the first.
+  const [hiddenMgs, setHiddenMgs] = useState(() => new Set(volumeTrend.activeMgs.slice(1)));
   const toggleMg = mg => setHiddenMgs(prev => {
     const next = new Set(prev);
     next.has(mg) ? next.delete(mg) : next.add(mg);
