@@ -124,6 +124,14 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
   const updateSet = (id,u) => sync({sets:ex.sets.map(s=>s.id===id?u:s)});
   const deleteSet = (id) => sync({sets:ex.sets.filter(s=>s.id!==id)});
 
+  // Heaviest set from the most recent session with this exercise — shown up top so you
+  // know last time's top set without pre-adding placeholder rows to reveal the ghosts.
+  const lastTop = (prevSets||[]).reduce((best,s)=>{
+    const w=parseFloat(s.weight)||0;
+    if(!w) return best;
+    return (!best || w>(parseFloat(best.weight)||0)) ? s : best;
+  }, null);
+
   return (
     <div style={{background:T.surface,border:`1px solid ${MC[mg]}33`,borderRadius:10,overflow:"hidden",marginBottom:12}}>
       <div style={{padding:"12px 14px",borderBottom:`1px solid ${T.borderSubtle}`,display:"flex",flexDirection:"column",gap:10}}>
@@ -165,6 +173,12 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
         </div>
       </div>
       <div style={{padding:"8px 14px 4px"}}>
+        {lastTop&&(
+          <div style={{display:"inline-flex",alignItems:"center",gap:8,marginBottom:8,padding:"4px 10px",borderRadius:6,background:MC[mg]+"14",border:`1px solid ${MC[mg]}33`}}>
+            <span style={{fontSize:10,letterSpacing:"0.12em",color:T.dimmer,textTransform:"uppercase"}}>Last max</span>
+            <span style={{fontSize:14,fontFamily:T.fontMono,color:MC[mg]}}>{lastTop.weight} lbs × {lastTop.reps||"—"}</span>
+          </div>
+        )}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,marginBottom:6}}>
           <span style={{fontSize:12,color:T.dimmest,width:20,flexShrink:0}}>#</span>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -181,7 +195,9 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
           const ghost = prevSets?.[i];
           return (
             <div key={s.id}>
-              <SetRow set={s} idx={i} T={T} onUpdate={u=>updateSet(s.id,u)} onDelete={()=>deleteSet(s.id)} onRestartTimer={onAddSet}/>
+              <SetRow set={s} idx={i} T={T} onUpdate={u=>updateSet(s.id,u)}
+                onDelete={()=>{ if((s.weight||s.reps)&&!confirm(`Remove set ${i+1}?  ${s.weight||"—"} × ${s.reps||"—"}`)) return; deleteSet(s.id); }}
+                onRestartTimer={onAddSet}/>
               {ghost&&(ghost.weight||ghost.reps)&&(
                 <div style={{display:"flex",gap:8,paddingLeft:28,paddingBottom:4,marginTop:-2}}>
                   <span style={{fontSize:11,color:T.dimmer,fontStyle:"italic",letterSpacing:"0.03em"}}>
