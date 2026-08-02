@@ -223,19 +223,45 @@ function TrendsView({ sessions, T, restDays, toggleRestDay }) {
       return [{ date: s.date, label: fmtDate(s.date), value: bestWeight }];
     });
 
-  // --- Volume trend: weekly volume per muscle group within range ---
+  // --- Volume trend: volume per muscle group within range ---
+  // Bin width adapts to the range: weekly for short spans, monthly for long ones.
+  // Weekly bins over a full year read as a sawtooth (a group trained every 8-9 days
+  // lands zero volume in some calendar weeks), so long ranges aggregate by month.
   const volumeTrend = (() => {
     const start = new Date(rangeStart + "T00:00:00");
     const end   = new Date(rangeEnd   + "T00:00:00");
-    if (isNaN(start) || isNaN(end) || start > end) return { bins: [], byMg: {}, activeMgs: [] };
-    const cur = new Date(start);
-    cur.setDate(cur.getDate() - cur.getDay()); // snap to Sunday
+    if (isNaN(start) || isNaN(end) || start > end) return { bins: [], byMg: {}, activeMgs: [], unit: "week" };
+    const spanDays = Math.round((end - start) / 86400000);
+    const unit = spanDays > 140 ? "month" : "week";
     const bins = [];
-    while (cur <= end) {
-      const bs = new Date(cur);
-      const be = new Date(cur); be.setDate(be.getDate() + 6);
-      bins.push({ start: toDateStr(bs), end: toDateStr(be) });
-      cur.setDate(cur.getDate() + 7);
+    if (unit === "month") {
+      const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+      while (cur <= end) {
+        const bs = new Date(cur);
+        const be = new Date(cur.getFullYear(), cur.getMonth() + 1, 0); // last day of month
+        bins.push({
+          start: toDateStr(bs),
+          end: toDateStr(be),
+          label: bs.toLocaleDateString("en-US", { month: "short", year: "2-digit" }),
+          title: bs.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+        });
+        cur.setMonth(cur.getMonth() + 1);
+      }
+    } else {
+      const cur = new Date(start);
+      cur.setDate(cur.getDate() - cur.getDay()); // snap to Sunday
+      while (cur <= end) {
+        const bs = new Date(cur);
+        const be = new Date(cur); be.setDate(be.getDate() + 6);
+        const lbl = bs.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        bins.push({
+          start: toDateStr(bs),
+          end: toDateStr(be),
+          label: lbl,
+          title: `week of ${lbl}`,
+        });
+        cur.setDate(cur.getDate() + 7);
+      }
     }
     const byMg = {};
     MUSCLE_GROUPS.forEach(mg => { byMg[mg] = bins.map(() => 0); });
@@ -251,7 +277,7 @@ function TrendsView({ sessions, T, restDays, toggleRestDay }) {
       });
     });
     const activeMgs = MUSCLE_GROUPS.filter(mg => byMg[mg].some(v => v > 0));
-    return { bins, byMg, activeMgs };
+    return { bins, byMg, activeMgs, unit };
   })();
 
   // Default to a single muscle group selected — hide every active group except the first.
@@ -375,7 +401,7 @@ function TrendsView({ sessions, T, restDays, toggleRestDay }) {
               <path d={`M ${pts.join(" L ")}`} fill="none" stroke={MC[mg]} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" opacity="0.85"/>
               {series.map((v,i) => v > 0 ? (
                 <circle key={i} cx={xOf(i)} cy={yOf(v)} r="3" fill={MC[mg]} stroke={T.bg} strokeWidth="1.5">
-                  <title>{mg} — week of {bins[i].start}: {Math.round(v).toLocaleString()}</title>
+                  <title>{mg} — {bins[i].title}: {Math.round(v).toLocaleString()}</title>
                 </circle>
               ) : null)}
             </g>
@@ -383,7 +409,7 @@ function TrendsView({ sessions, T, restDays, toggleRestDay }) {
         })}
         {xLabelIdxs.map(i => (
           <text key={i} x={xOf(i)} y={H - 4} textAnchor="middle" fill={T.dimmer} fontSize="11" fontFamily={T.fontMono}>
-            {new Date(bins[i].start).toLocaleDateString("en-US",{month:"short",day:"numeric"})}
+            {bins[i].label}
           </text>
         ))}
       </svg>
