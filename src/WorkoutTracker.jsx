@@ -1139,6 +1139,21 @@ export default function WorkoutTracker() {
 
   const totalSets=workout.reduce((a,e)=>a+e.sets.length,0);
 
+  // Auto-name a workout from the muscle groups actually trained (by set count),
+  // so there's no "select workout type" step. "Chest Day" / "Chest & Back" / "Chest, Back & more".
+  const autoWorkoutName=(w)=>{
+    const count={};
+    w.forEach(e=>{
+      const n=e.sets.filter(s=>s.weight||s.reps).length;
+      if(n) count[e.muscleGroup]=(count[e.muscleGroup]||0)+n;
+    });
+    const groups=Object.keys(count).sort((a,b)=>count[b]-count[a]);
+    if(groups.length===0) return "Workout";
+    if(groups.length===1) return `${groups[0]} Day`;
+    if(groups.length===2) return `${groups[0]} & ${groups[1]}`;
+    return `${groups[0]}, ${groups[1]} & more`;
+  };
+
   // --- Streak calculation (36hr grace period) ---
   const calcStreak = (sessionList) => {
     if(!sessionList.length && !restDays.length) return 0;
@@ -1172,7 +1187,6 @@ export default function WorkoutTracker() {
   const saveSession=()=>{
     const valid=workout.some(e=>e.sets.some(s=>s.weight&&s.reps));
     if(!valid){setSaveFlash("error");setTimeout(()=>setSaveFlash(null),900);return;}
-    if(!workoutName){setSaveFlash("noname");setTimeout(()=>setSaveFlash(null),900);return;}
     // Persist any new custom exercise names per muscle group
     const newCustom={...customExercises};
     workout.forEach(e=>{
@@ -1196,7 +1210,7 @@ export default function WorkoutTracker() {
 
     const session={
       id:uid(),date:new Date().toISOString(),
-      name:workoutName,
+      name:workoutName||autoWorkoutName(workout),
       exercises:workout.map(e=>({...e,sets:e.sets.filter(s=>s.weight||s.reps).map(({done,...s})=>s)})).filter(e=>e.sets.length>0)
     };
 
@@ -1431,17 +1445,13 @@ export default function WorkoutTracker() {
               </div>
             </div>
 
-            {/* Workout name */}
-            <div style={{display:"flex",gap:10,alignItems:"center"}}>
-              <select value={workoutName} onChange={e=>setWorkoutName(e.target.value)}
-                style={{flex:1,padding:"10px 14px",borderRadius:7,background:T.surface,border:`1px solid ${T.border}`,color:workoutName?T.textPrimary:T.muted,fontSize:16,fontFamily:"inherit",outline:"none"}}>
-                <option value="" disabled>Select workout type...</option>
-                {["Arm Day","Leg Day","Back Day","Chest Day","Push Day","Pull Day"].map(n=>(
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-              {totalSets>0&&<span style={{fontSize:13,color:T.muted,whiteSpace:"nowrap"}}>{totalSets} SET{totalSets!==1?"S":""}</span>}
-            </div>
+            {/* Auto-named from the muscle groups worked — no manual selection needed */}
+            {workout.length>0&&(
+              <div style={{display:"flex",gap:10,alignItems:"center",justifyContent:"space-between",padding:"2px 4px"}}>
+                <span style={{fontFamily:T.fontDisplay,fontSize:22,letterSpacing:"0.05em",color:T.accent}}>{autoWorkoutName(workout)}</span>
+                {totalSets>0&&<span style={{fontSize:13,color:T.muted,whiteSpace:"nowrap"}}>{totalSets} SET{totalSets!==1?"S":""}</span>}
+              </div>
+            )}
 
             {/* Log Rest Day — shown when no exercises added yet */}
             {workout.length===0&&(
@@ -1489,7 +1499,7 @@ export default function WorkoutTracker() {
                 <button onClick={saveSession}
                   className={saveFlash==="success"?"fok":saveFlash==="error"?"ferr":""}
                   style={{flex:1,padding:"11px",borderRadius:7,cursor:"pointer",fontFamily:"inherit",background:`linear-gradient(135deg,${T.accentDim},${T.accentDim2})`,border:"none",color:T.accentText,fontSize:14,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:500,outline:"none"}}>
-                  {saveFlash==="success"?"✓ Saved!":saveFlash==="error"?"Add weight & reps first":saveFlash==="noname"?"Select a workout type":"Save Workout"}
+                  {saveFlash==="success"?"✓ Saved!":saveFlash==="error"?"Add weight & reps first":"Save Workout"}
                 </button>
               )}
             </div>
