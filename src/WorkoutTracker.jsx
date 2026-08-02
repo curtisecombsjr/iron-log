@@ -21,6 +21,39 @@ const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).p
 const fmtDate = (iso) => new Date(iso).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
 const uid = () => Math.random().toString(36).slice(2,9);
 
+// --- "Unsaved workout" reminder (separate id/channel from the rest timer, which uses id 1) ---
+const SAVE_REMINDER_ID = 2;
+async function scheduleSaveReminder(workout){
+  if(!Capacitor.isNativePlatform()) return;
+  try{
+    await LocalNotifications.requestPermissions();
+    await LocalNotifications.createChannel({
+      id:"save-reminder", name:"Unsaved Workout",
+      description:"Reminds you to save a workout you're still logging.",
+      importance:4, vibration:true, visibility:1,
+    });
+    // Smart body: call out a half-entered set (weight but no reps) if there is one.
+    const missing = workout
+      .flatMap(e=>e.sets.map(s=>({name:e.name,weight:s.weight,reps:s.reps})))
+      .find(x=>x.weight&&!x.reps);
+    const validCount = workout.reduce((n,e)=>n+e.sets.filter(s=>s.weight&&s.reps).length,0);
+    const body = missing
+      ? `Last set is missing reps — ${missing.name} ${missing.weight} × ?`
+      : `Unsaved workout — ${validCount} set${validCount!==1?"s":""} logged. Tap to save.`;
+    // allowWhileIdle so it fires during Doze instead of being deferred until foreground.
+    await LocalNotifications.cancel({notifications:[{id:SAVE_REMINDER_ID}]});
+    await LocalNotifications.schedule({notifications:[{
+      id:SAVE_REMINDER_ID, title:"Iron Log", body,
+      schedule:{ at:new Date(Date.now()+10*60*1000), allowWhileIdle:true },
+      channelId:"save-reminder",
+    }]});
+  }catch{}
+}
+function cancelSaveReminder(){
+  if(!Capacitor.isNativePlatform()) return;
+  LocalNotifications.cancel({notifications:[{id:SAVE_REMINDER_ID}]}).catch(()=>{});
+}
+
 const THEMES = {
   light: { name:"Light", bg:"#f4f1ec", surface:"#fffefa", surfaceDeep:"#edeae4", border:"#d4cfc7", borderSubtle:"#e8e4dd", accent:"#1a1a2e", accentDim:"#2d2d4a", accentDim2:"#3d3d5c", accentText:"#fffefa", muted:"#8a8478", dimmer:"#6b6560", dimmest:"#c4bfb8", timerIdle:"#9a9490", timerActive:"#1a1a2e", textPrimary:"#1a1714", textSecondary:"#6b6560", scrollThumb:"#c4bfb8", selectBg:"#fffefa", inputBg:"#f4f1ec",
     fontDisplay:"'Bebas Neue',sans-serif", fontMono:"'DM Mono',monospace", fontBody:"'Inter',-apple-system,system-ui,sans-serif", isLight:true },
@@ -662,8 +695,17 @@ function TrendsView({ sessions, T, restDays, toggleRestDay }) {
 export default function WorkoutTracker() {
   const [view, setView] = useState("log");
   const T = THEMES.light;
-  const [workout, setWorkout] = useState([]);
-  const [workoutName, setWorkoutName] = useState("");
+  // Restore an in-progress workout the moment we mount, so Android killing the
+  // backgrounded app (the Spotify-switch bug) never wipes it. Synchronous lazy
+  // init avoids any flash of an empty log.
+  const [workout, setWorkout] = useState(()=>{
+    try{ const d=JSON.parse(localStorage.getItem("wl_draft")||"null"); return Array.isArray(d?.workout)?d.workout:[]; }
+    catch{ return []; }
+  });
+  const [workoutName, setWorkoutName] = useState(()=>{
+    try{ const d=JSON.parse(localStorage.getItem("wl_draft")||"null"); return d?.workoutName||""; }
+    catch{ return ""; }
+  });
   const [sessions, setSessions] = useState(()=>JSON.parse(localStorage.getItem("wl_sessions2")||"[]"));
   const [restDays, setRestDays] = useState(()=>JSON.parse(localStorage.getItem("wl_rest_days")||"[]"));
   const [customExercises, setCustomExercises] = useState(()=>JSON.parse(localStorage.getItem("wl_custom_ex")||"{}"));
@@ -677,7 +719,6 @@ export default function WorkoutTracker() {
   const [prBanner, setPrBanner] = useState(null); // {exerciseName, weight}
   const [milestoneBanner, setMilestoneBanner] = useState(null); // {days, message}
   const [summary, setSummary] = useState(null); // saved session object + prs
-  const draftRestored = useRef(false); // gate: don't persist the draft until we've restored any existing one
 
   const toDateStr = (d) => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
   const sessionDateStr = (s) => toDateStr(new Date(s.date));
@@ -875,6 +916,32 @@ export default function WorkoutTracker() {
     } catch(e) { /* silently ignore corrupt autosave */ }
   }, []);
 
+  // Persist the in-progress workout on every edit + (re)arm the "unsaved workout"
+  // reminder. The 1.5s debounce collapses rapid keystrokes into one reschedule,
+  // which resets the 10-min countdown — steady lifting keeps pushing it out.
+  useEffect(()=>{
+    if(workout.length===0){
+      localStorage.removeItem("wl_draft");
+      cancelSaveReminder();
+      return;
+    }
+    localStorage.setItem("wl_draft", JSON.stringify({ workout, workoutName, savedAt:new Date().toISOString() }));
+    const hasValid = workout.some(e=>e.sets.some(s=>s.weight&&s.reps));
+    if(!hasValid) return;
+    const t = setTimeout(()=>scheduleSaveReminder(workout), 1500);
+    return ()=>clearTimeout(t);
+  }, [workout, workoutName]);
+
+  // Tapping the reminder opens straight to the log screen.
+  useEffect(()=>{
+    if(!Capacitor.isNativePlatform()) return;
+    let handle;
+    LocalNotifications.addListener("localNotificationActionPerformed", (action)=>{
+      if(action?.notification?.id===SAVE_REMINDER_ID) setView("log");
+    }).then(h=>{ handle=h; }).catch(()=>{});
+    return ()=>{ handle?.remove?.(); };
+  }, []);
+
   const saveTemplate = () => {
     if(!templateName.trim()||!workout.length) return;
     const tmpl = {
@@ -994,7 +1061,7 @@ export default function WorkoutTracker() {
         });
         await LocalNotifications.schedule({notifications:[{
           id:1,title:"Rest Complete!",body:"Time to get back to lifting.",
-          schedule:{at:new Date(Date.now()+timerInput*1000)},
+          schedule:{at:new Date(Date.now()+timerInput*1000),allowWhileIdle:true},
           channelId:"rest-timer",sound:"bell.wav",
         }]});
       }catch{}
@@ -1015,7 +1082,7 @@ export default function WorkoutTracker() {
       LocalNotifications.cancel({notifications:[{id:1}]}).catch(()=>{});
       LocalNotifications.schedule({notifications:[{
         id:1,title:"Rest Complete!",body:"Time to get back to lifting.",
-        schedule:{at:new Date(Date.now()+timerInput*1000)},
+        schedule:{at:new Date(Date.now()+timerInput*1000),allowWhileIdle:true},
         channelId:"rest-timer",sound:"bell.wav",
       }]}).catch(()=>{});
     }
@@ -1116,6 +1183,7 @@ export default function WorkoutTracker() {
     });
 
     setWorkout([]); setWorkoutName("");
+    localStorage.removeItem("wl_draft"); cancelSaveReminder();
     setSaveFlash("success"); setTimeout(()=>setSaveFlash(null),800);
     // Show summary overlay instead of navigating away
     setSummary({session, prs: prsFound});
