@@ -4,7 +4,7 @@ import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import { LocalNotifications } from "@capacitor/local-notifications";
 
-const MUSCLE_GROUPS = ["Chest","Back","Shoulders","Biceps","Triceps","Legs","Glutes","Core","Full Body"];
+const MUSCLE_GROUPS = ["Chest","Back","Shoulders","Biceps","Triceps","Legs","Glutes","Core"];
 const PRESETS = {
   Chest:["Bench Press","Incline Press","Dumbbell Flyes","Push-Ups","Cable Crossover"],
   Back:["Deadlift","Pull-Ups","Barbell Row","Lat Pulldown","Seated Cable Row"],
@@ -770,7 +770,7 @@ function TrendsView({ sessions, T, restDays, toggleRestDay, streak }) {
             </div>
             <div style={{fontSize:13,color:T.muted}}>avg <span style={{color:T.accent,fontFamily:T.fontDisplay,fontSize:18}}>{avgPerWeek.toFixed(1)}</span>/wk</div>
           </div>
-          <div style={{overflowX:"auto"}}>
+          <div style={{overflowX:"auto"}} ref={el=>{ if(el) el.scrollLeft = el.scrollWidth; }}>
             <div style={{display:"flex",alignItems:"flex-end",gap:3,height:80,minWidth:"100%"}}>
               {weeklyCounts.map((w,i)=>{
                 const h = maxWeekCount ? Math.round((w.count/maxWeekCount)*72) : 0;
