@@ -61,6 +61,20 @@ const THEMES = {
 
 function SetRow({ set, idx, onUpdate, onDelete, T, onRestartTimer }) {
   const done = !!set.done;
+  // Inline two-tap delete: first tap on a set with data arms a "Delete?" pill for 3s;
+  // second tap confirms. Empty rows delete on the first tap. Replaces the native confirm().
+  const [confirmDel, setConfirmDel] = useState(false);
+  const delTimer = useRef(null);
+  useEffect(()=>()=>clearTimeout(delTimer.current), []);
+  const handleDel = () => {
+    const hasData = !!(set.weight || set.reps);
+    if(!hasData){ onDelete(); return; }
+    if(confirmDel){ clearTimeout(delTimer.current); onDelete(); return; }
+    setConfirmDel(true);
+    try{navigator.vibrate&&navigator.vibrate(20);}catch{}
+    clearTimeout(delTimer.current);
+    delTimer.current = setTimeout(()=>setConfirmDel(false), 3000);
+  };
   return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.borderSubtle}`,opacity:done?0.5:1,transition:"opacity 0.2s"}}>
       <span style={{fontFamily:T.fontDisplay,fontSize:18,color:T.timerIdle,width:20,textAlign:"center",flexShrink:0}}>{idx+1}</span>
@@ -81,9 +95,13 @@ function SetRow({ set, idx, onUpdate, onDelete, T, onRestartTimer }) {
           title={done?"Mark incomplete":"Mark complete"}>
           {done&&<span style={{color:T.isLight?"#fff":T.accentText,fontSize:14,lineHeight:1,fontWeight:"bold"}}>✓</span>}
         </button>
-        <button onClick={onDelete}
-          style={{background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:19,lineHeight:1,padding:"0 4px",transition:"color 0.15s"}}
-          onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color=T.dimmest}>×</button>
+        <button onClick={handleDel}
+          style={confirmDel
+            ? {background:"#ef4444",border:"none",color:"#fff",cursor:"pointer",fontSize:12,lineHeight:1,padding:"5px 9px",borderRadius:5,letterSpacing:"0.04em",fontFamily:"inherit",outline:"none",whiteSpace:"nowrap"}
+            : {background:"none",border:"none",color:T.dimmest,cursor:"pointer",fontSize:19,lineHeight:1,padding:"0 4px",transition:"color 0.15s",outline:"none"}}
+          title={confirmDel?"Tap again to remove":"Remove set"}>
+          {confirmDel?"Delete?":"×"}
+        </button>
       </div>
     </div>
   );
@@ -195,9 +213,7 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
           const ghost = prevSets?.[i];
           return (
             <div key={s.id}>
-              <SetRow set={s} idx={i} T={T} onUpdate={u=>updateSet(s.id,u)}
-                onDelete={()=>{ if((s.weight||s.reps)&&!confirm(`Remove set ${i+1}?  ${s.weight||"—"} × ${s.reps||"—"}`)) return; deleteSet(s.id); }}
-                onRestartTimer={onAddSet}/>
+              <SetRow set={s} idx={i} T={T} onUpdate={u=>updateSet(s.id,u)} onDelete={()=>deleteSet(s.id)} onRestartTimer={onAddSet}/>
               {ghost&&(ghost.weight||ghost.reps)&&(
                 <div style={{display:"flex",gap:8,paddingLeft:28,paddingBottom:4,marginTop:-2}}>
                   <span style={{fontSize:11,color:T.dimmer,fontStyle:"italic",letterSpacing:"0.03em"}}>
