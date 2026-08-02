@@ -63,3 +63,36 @@ showing up — the hardest set is often the first one.
   detection, heatmap) — no architectural changes needed.
 - Recommendation if doing only one: **Plate Club**. Most lifting-native,
   smallest blast radius, can layer tonnage/anniversaries on later.
+
+## Practical ideas — proposed 2026-08-02 (not built)
+
+Day-to-day utility ideas (distinct from the gamification list above), ranked by
+value to how Curtis trains (6 days/week, progression-focused, data local-only).
+
+1. **Pre-fill sets from last time (top pick).** When adding an exercise,
+   auto-populate the set rows with last session's weights/reps so it's tap-to-
+   confirm/bump instead of empty rows. Extends the existing per-row "last:" ghosts
+   and the "Last max" strip; removes the pre-add-placeholder friction entirely.
+2. **Automatic backups (top pick).** History lives only in this app's
+   localStorage; backup is currently a manual button. Add a silent periodic export
+   (dated `.ilbak` to Downloads every N days) and/or a "last backed up N days ago"
+   nudge. Insurance against cleared cache / failed update / dead phone.
+3. **"What to train next."** One suggestion line on the log screen built on the
+   Last Trained data ("Legs — 6 days off. Train today?").
+4. **This week vs last week.** Small delta tile: volume and workout count vs prior
+   week (`+12% volume`, `4 vs 5 workouts`).
+5. **Plate calculator.** Target weight (+ bar) → per-side plate breakdown.
+6. **e1RM toggle on the Strength chart.** That chart plots raw top weight; toggle
+   to plot estimated 1RM (already computed for the Records board) for a truer
+   progression line on lighter-higher-rep days.
+
+## Open threads from the 2026-08-02 session
+
+- **Background reliability verdict pending.** Draft persistence + unsaved-workout
+  reminder + `allowWhileIdle` Doze-proof alarms shipped; Curtis is testing over
+  ~a week of real workouts. Confirmed working 3× early.
+- **Possible rest-timer double-bing.** Now that the background notification fires
+  reliably, the foreground catch-up `beep()` may sound a second time on return. Left
+  in as a Doze fallback — mute it if the background bing proves reliable.
+- **Backdate the lost workout from ~2026-07-28** (forgotten save, shows as a heatmap
+  gap) so the streak is honest. Offered, not yet done.
