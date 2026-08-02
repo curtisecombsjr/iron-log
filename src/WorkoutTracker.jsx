@@ -951,6 +951,8 @@ export default function WorkoutTracker() {
   const [prBanner, setPrBanner] = useState(null); // {exerciseName, weight}
   const [milestoneBanner, setMilestoneBanner] = useState(null); // {days, message}
   const [summary, setSummary] = useState(null); // saved session object + prs
+  const [confirmClear, setConfirmClear] = useState(false); // two-tap guard for "Clear" (discard current workout)
+  const clearConfirmTimer = useRef(null);
 
   const toDateStr = (d) => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
   const sessionDateStr = (s) => toDateStr(new Date(s.date));
@@ -1384,6 +1386,24 @@ export default function WorkoutTracker() {
     {days:100, msg:"100 days! Absolute legend. 🎖️"},
   ];
 
+  // Discard the current in-progress workout (two-tap). Routes through the same
+  // teardown as save, so the draft + unsaved-workout reminder are cleared too.
+  useEffect(()=>()=>clearTimeout(clearConfirmTimer.current), []);
+  const handleClearWorkout=()=>{
+    if(!confirmClear){
+      setConfirmClear(true);
+      try{navigator.vibrate&&navigator.vibrate(20);}catch{}
+      clearTimeout(clearConfirmTimer.current);
+      clearConfirmTimer.current=setTimeout(()=>setConfirmClear(false),3000);
+      return;
+    }
+    clearTimeout(clearConfirmTimer.current);
+    setConfirmClear(false);
+    setWorkout([]); setWorkoutName("");
+    localStorage.removeItem("wl_draft"); cancelSaveReminder();
+    try{navigator.vibrate&&navigator.vibrate([20,40,20]);}catch{}
+  };
+
   const saveSession=()=>{
     const valid=workout.some(e=>e.sets.some(s=>s.weight&&s.reps));
     if(!valid){setSaveFlash("error");setTimeout(()=>setSaveFlash(null),900);return;}
@@ -1645,11 +1665,18 @@ export default function WorkoutTracker() {
               </div>
             </div>
 
-            {/* Auto-named from the muscle groups worked — no manual selection needed */}
+            {/* Auto-named title + discard-current-workout control (replaces the old workout-type dropdown) */}
             {workout.length>0&&(
               <div style={{display:"flex",gap:10,alignItems:"center",justifyContent:"space-between",padding:"2px 4px"}}>
-                <span style={{fontFamily:T.fontDisplay,fontSize:22,letterSpacing:"0.05em",color:T.accent}}>{autoWorkoutName(workout)}</span>
+                <span style={{fontFamily:T.fontDisplay,fontSize:22,letterSpacing:"0.05em",color:T.accent,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{autoWorkoutName(workout)}</span>
                 {totalSets>0&&<span style={{fontSize:13,color:T.muted,whiteSpace:"nowrap"}}>{totalSets} SET{totalSets!==1?"S":""}</span>}
+                <button onClick={handleClearWorkout}
+                  style={confirmClear
+                    ? {background:"#ef4444",border:"none",color:"#fff",cursor:"pointer",fontSize:12,padding:"6px 11px",borderRadius:6,letterSpacing:"0.04em",fontFamily:"inherit",outline:"none",whiteSpace:"nowrap"}
+                    : {background:"transparent",border:`1px solid ${T.border}`,color:T.muted,cursor:"pointer",fontSize:12,padding:"6px 11px",borderRadius:6,letterSpacing:"0.04em",fontFamily:"inherit",outline:"none",whiteSpace:"nowrap",transition:"all 0.15s"}}
+                  title={confirmClear?"Tap again to discard this workout":"Discard current workout without saving"}>
+                  {confirmClear?"Clear all?":"Clear"}
+                </button>
               </div>
             )}
 
