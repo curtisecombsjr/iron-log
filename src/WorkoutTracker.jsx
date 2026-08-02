@@ -235,7 +235,7 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
   );
 }
 
-function TrendsView({ sessions, T, restDays, toggleRestDay }) {
+function TrendsView({ sessions, T, restDays, toggleRestDay, streak }) {
   // --- Date range (default: last 1 year) ---
   const toDateStr = (d) => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
   const todayStr = toDateStr(new Date());
@@ -543,6 +543,95 @@ function TrendsView({ sessions, T, restDays, toggleRestDay }) {
     return d >= new Date(new Date().getFullYear(),0,1);
   }).length;
 
+  const fmtVol = v => v>=1000 ? `${(v/1000).toFixed(1)}k` : `${Math.round(v)}`;
+
+  // ---- Dashboard tiles (selected range) ----
+  const setsOf = s => s.exercises.reduce((b,e)=>b+e.sets.length,0);
+  const volOf  = s => s.exercises.reduce((b,e)=>b+e.sets.reduce((c,st)=>c+((parseFloat(st.weight)||0)*(parseInt(st.reps)||0)),0),0);
+  const rangeWorkouts = filteredSessions.length;
+  const rangeSets   = filteredSessions.reduce((a,s)=>a+setsOf(s),0);
+  const rangeVolume = filteredSessions.reduce((a,s)=>a+volOf(s),0);
+  const rangeSpanDays = Math.max(1, Math.round((new Date(rangeEnd)-new Date(rangeStart))/864e5)+1);
+  const avgPerWeek = rangeWorkouts>0 ? rangeWorkouts/(rangeSpanDays/7) : 0;
+
+  // Longest streak — same "gap ≤ 2 days continues" rule as the current-streak calc.
+  const longestStreak = (()=>{
+    const tds = d => new Date(d).toLocaleDateString("en-US");
+    const daySet = new Set([...sessions.map(s=>tds(s.date)), ...restDays.map(d=>tds(d+"T00:00:00"))]);
+    const days = [...daySet].map(d=>new Date(d)).sort((a,b)=>a-b);
+    if(!days.length) return 0;
+    let best=1, run=1;
+    for(let i=1;i<days.length;i++){
+      const diff=(days[i]-days[i-1])/864e5;
+      run = diff<=2 ? run+1 : 1;
+      if(run>best) best=run;
+    }
+    return best;
+  })();
+
+  // ---- Workouts per week (consistency, selected range) ----
+  const weeklyCounts = (()=>{
+    const start=new Date(rangeStart+"T00:00:00"), end=new Date(rangeEnd+"T00:00:00");
+    if(isNaN(start)||isNaN(end)||start>end) return [];
+    const cur=new Date(start); cur.setDate(cur.getDate()-cur.getDay());
+    const weeks=[];
+    while(cur<=end){
+      const bs=toDateStr(cur); const be=new Date(cur); be.setDate(be.getDate()+6);
+      weeks.push({start:bs,end:toDateStr(be),label:new Date(bs).toLocaleDateString("en-US",{month:"short",day:"numeric"}),count:0});
+      cur.setDate(cur.getDate()+7);
+    }
+    filteredSessions.forEach(s=>{
+      const sd=toDateStr(new Date(s.date));
+      const w=weeks.find(b=>sd>=b.start&&sd<=b.end);
+      if(w) w.count++;
+    });
+    return weeks;
+  })();
+  const maxWeekCount = weeklyCounts.reduce((m,w)=>Math.max(m,w.count),0);
+
+  // ---- Muscle-group balance (share of sets, selected range) ----
+  const mgSets = {};
+  MUSCLE_GROUPS.forEach(mg=>{ mgSets[mg]=0; });
+  filteredSessions.forEach(s=>s.exercises.forEach(e=>{ if(mgSets[e.muscleGroup]!=null) mgSets[e.muscleGroup]+=e.sets.length; }));
+  const mgTotal = Object.values(mgSets).reduce((a,b)=>a+b,0);
+  const mgBalance = MUSCLE_GROUPS
+    .map(mg=>({mg, sets:mgSets[mg], pct: mgTotal?mgSets[mg]/mgTotal:0}))
+    .filter(x=>x.sets>0)
+    .sort((a,b)=>b.sets-a.sets);
+
+  // ---- Days since last trained, per group (all-time, relative to today) ----
+  const today0 = new Date(); today0.setHours(0,0,0,0);
+  const lastTrained = {};
+  sessions.forEach(s=>{
+    const d=new Date(s.date); d.setHours(0,0,0,0);
+    s.exercises.forEach(e=>{
+      const t=d.getTime();
+      if(lastTrained[e.muscleGroup]==null || t>lastTrained[e.muscleGroup]) lastTrained[e.muscleGroup]=t;
+    });
+  });
+  const daysSince = MUSCLE_GROUPS
+    .filter(mg=>lastTrained[mg]!=null)
+    .map(mg=>({mg, days: Math.round((today0-lastTrained[mg])/864e5)}))
+    .sort((a,b)=>b.days-a.days);
+
+  // ---- Records board (all-time PR weight + estimated 1RM per exercise) ----
+  const records = (()=>{
+    const rec={};
+    sessions.forEach(s=>s.exercises.forEach(e=>{
+      e.sets.forEach(st=>{
+        const w=parseFloat(st.weight)||0, r=parseInt(st.reps)||0;
+        if(!w) return;
+        const e1rm = r ? w*(1+r/30) : w;
+        if(!rec[e.name]) rec[e.name]={name:e.name, mg:e.muscleGroup, pr:w, prReps:r, e1rm};
+        else {
+          if(w>rec[e.name].pr){ rec[e.name].pr=w; rec[e.name].prReps=r; }
+          if(e1rm>rec[e.name].e1rm) rec[e.name].e1rm=e1rm;
+        }
+      });
+    }));
+    return Object.values(rec).sort((a,b)=>b.e1rm-a.e1rm);
+  })();
+
   return (
     <div className="fade" style={{display:"flex",flexDirection:"column",gap:20}}>
 
@@ -651,6 +740,97 @@ function TrendsView({ sessions, T, restDays, toggleRestDay }) {
         )}
       </div>
 
+      {/* Overview tiles (range totals + all-time streaks) */}
+      <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"16px 16px 14px"}}>
+        <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:12}}>Overview</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(88px,1fr))",gap:8}}>
+          {[
+            {label:"WORKOUTS", value:rangeWorkouts, color:T.accent},
+            {label:"SETS",     value:rangeSets, color:T.textPrimary},
+            {label:"VOLUME",   value:rangeVolume>0?`${fmtVol(rangeVolume)} lbs`:"—", color:T.textPrimary},
+            {label:"PER WEEK", value:avgPerWeek>0?avgPerWeek.toFixed(1):"—", color:T.textPrimary},
+            {label:"STREAK",   value:streak>0?`🔥 ${streak}`:"0", color:T.accent},
+            {label:"LONGEST",  value:longestStreak, color:T.muted},
+          ].map(t=>(
+            <div key={t.label} style={{background:T.surfaceDeep,border:`1px solid ${T.border}`,borderRadius:8,padding:"10px 8px",textAlign:"center"}}>
+              <div style={{fontSize:9,color:T.dimmer,letterSpacing:"0.12em",marginBottom:3}}>{t.label}</div>
+              <div style={{fontSize:20,color:t.color,fontFamily:T.fontDisplay,letterSpacing:"0.03em"}}>{t.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Workouts per week (consistency) */}
+      {weeklyCounts.length>0 && (
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"16px 16px 14px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:12,gap:8,flexWrap:"wrap"}}>
+            <div>
+              <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:2}}>Workouts / Week</div>
+              <div style={{fontSize:13,color:T.muted}}>Consistency over the range</div>
+            </div>
+            <div style={{fontSize:13,color:T.muted}}>avg <span style={{color:T.accent,fontFamily:T.fontDisplay,fontSize:18}}>{avgPerWeek.toFixed(1)}</span>/wk</div>
+          </div>
+          <div style={{overflowX:"auto"}}>
+            <div style={{display:"flex",alignItems:"flex-end",gap:3,height:80,minWidth:"100%"}}>
+              {weeklyCounts.map((w,i)=>{
+                const h = maxWeekCount ? Math.round((w.count/maxWeekCount)*72) : 0;
+                return (
+                  <div key={i} title={`Week of ${w.label}: ${w.count} workout${w.count!==1?"s":""}`}
+                    style={{flex:"1 0 7px",minWidth:7,display:"flex",flexDirection:"column",justifyContent:"flex-end",height:"100%"}}>
+                    <div style={{height:Math.max(h, w.count>0?3:0),background:w.count>0?T.accent:"transparent",borderRadius:"3px 3px 0 0",transition:"height 0.2s"}}/>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Muscle-group balance */}
+      {mgBalance.length>0 && (
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"16px 16px 14px"}}>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:2}}>Muscle Balance</div>
+            <div style={{fontSize:13,color:T.muted}}>Share of sets in range</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:9}}>
+            {mgBalance.map(({mg,sets,pct})=>(
+              <div key={mg}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:3}}>
+                  <span style={{fontSize:13,color:T.textPrimary}}>{mg}</span>
+                  <span style={{fontSize:12,color:T.muted,fontFamily:T.fontMono}}>{Math.round(pct*100)}% · {sets} set{sets!==1?"s":""}</span>
+                </div>
+                <div style={{height:8,background:T.surfaceDeep,borderRadius:4,overflow:"hidden"}}>
+                  <div style={{width:`${Math.max(pct*100,2)}%`,height:"100%",background:MC[mg],borderRadius:4}}/>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Days since last trained */}
+      {daysSince.length>0 && (
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"16px 16px 14px"}}>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:2}}>Last Trained</div>
+            <div style={{fontSize:13,color:T.muted}}>Most neglected first</div>
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            {daysSince.map(({mg,days})=>{
+              const col = days>=7?"#ef4444":days>=4?"#f59e0b":T.muted;
+              return (
+                <div key={mg} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 11px",borderRadius:8,background:T.surfaceDeep,border:`1px solid ${T.border}`}}>
+                  <div style={{width:9,height:9,borderRadius:"50%",background:MC[mg],flexShrink:0}}/>
+                  <span style={{fontSize:13,color:T.textPrimary}}>{mg}</span>
+                  <span style={{fontSize:13,color:col,fontFamily:T.fontMono}}>{days===0?"today":`${days}d`}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Strength Progress */}
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:20}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10}}>
@@ -718,6 +898,26 @@ function TrendsView({ sessions, T, restDays, toggleRestDay }) {
           <MultiLineChart bins={volumeTrend.bins} byMg={volumeTrend.byMg} activeMgs={volumeTrend.activeMgs} hidden={hiddenMgs}/>
         </div>
       </div>
+
+      {/* Records board */}
+      {records.length>0 && (
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"16px 16px 14px"}}>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:2}}>Records</div>
+            <div style={{fontSize:13,color:T.muted}}>All-time best per exercise · sorted by est. 1RM</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {records.map(r=>(
+              <div key={r.name} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:8,background:T.surfaceDeep,border:`1px solid ${T.border}`}}>
+                <span style={{fontSize:10,padding:"2px 7px",borderRadius:3,background:MC[r.mg]+"22",color:MC[r.mg],textTransform:"uppercase",letterSpacing:"0.06em",flexShrink:0}}>{r.mg}</span>
+                <span style={{fontSize:14,color:T.textPrimary,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.name}</span>
+                <span style={{fontSize:13,color:T.muted,fontFamily:T.fontMono,whiteSpace:"nowrap"}}>{r.pr} × {r.prReps||"—"}</span>
+                <span style={{fontSize:14,color:T.accent,fontFamily:T.fontDisplay,whiteSpace:"nowrap",minWidth:58,textAlign:"right"}}>{Math.round(r.e1rm)} <span style={{fontSize:9,color:T.dimmer,fontFamily:T.fontBody}}>1RM</span></span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
     </div>
   );
@@ -1685,7 +1885,7 @@ export default function WorkoutTracker() {
         )}
 
         {view==="trends"&&(
-          <TrendsView sessions={sessions} T={T} restDays={restDays} toggleRestDay={toggleRestDay}/>
+          <TrendsView sessions={sessions} T={T} restDays={restDays} toggleRestDay={toggleRestDay} streak={streak}/>
         )}
       </div>
     </div>
