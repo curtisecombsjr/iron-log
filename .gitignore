@@ -1,4 +1,5 @@
 node_modules/
 dist/
 android/app/build/
+iron-log.apk
 .DS_Store

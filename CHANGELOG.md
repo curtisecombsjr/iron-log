@@ -1,0 +1,35 @@
+# Changelog
+
+All notable changes to Iron Log are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.1.0] - 2026-08-07
+
+### Added
+- Trends dashboard: overview tiles, consistency chart, muscle-balance breakdown,
+  last-trained view, and a personal-records board.
+- Auto-named workouts derived from the muscle groups trained (removed the
+  manual workout-type dropdown).
+- Two-tap Clear button in the title row to discard the current workout.
+- `IDEAS.md` — a backlog capturing unbuilt gamification ideas and open threads.
+
+### Changed
+- Set-delete now uses an inline two-tap "Delete?" pill instead of the native
+  confirm dialog.
+- Volume trend uses adaptive weekly/monthly binning to smooth long-range charts;
+  default range is 1 year, single muscle group.
+- Template deletion now prompts for confirmation.
+
+### Fixed
+- Background reliability: in-progress workouts persist, an unsaved-workout
+  reminder fires, and rest-timer alarms survive Android Doze.
+
+## Prior history
+
+Earlier milestones are captured in the following git tags:
+
+- `v1.0-pre-capacitor` — the last pre-Capacitor build before the Android
+  wrapper was added.
+- `v0.9` — earlier PWA-era snapshot.
