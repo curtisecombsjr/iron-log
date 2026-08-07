@@ -10,6 +10,13 @@
 
 (Edit if the project lives elsewhere — e.g. SSH to another host.)
 
+## Git flow
+
+- **`develop`** = integration (day-to-day work); **`main`** = releases only.
+- Bump versions on `develop` (`package.json` + `android/app/build.gradle` versionName/versionCode) and update `CHANGELOG.md`, then `git merge --no-ff develop` into `main` and push.
+- Tag `vX.Y.Z` on `main` and push the tag — CI (`.github/workflows/build.yml`) builds the APK on every push and, on `v*` tags, publishes a **GitHub Release** with `iron-log.apk`.
+- Commit/push after meaningful changes (the workspace Stop hook is the safety net; its WIP snapshots carry `[skip ci]`).
+
 ## After any source change, always build the APK
 
 This project ships as a sideloaded APK (not on Play Store) — Curtis copies the APK to his phone manually. So **whenever you edit anything under `src/` (or anything that ends up in the bundle), build the APK automatically — don't stop at `npm run build`.**
