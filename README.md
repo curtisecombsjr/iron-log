@@ -96,4 +96,4 @@ git checkout main && git merge --no-ff develop && git push origin main
 git tag vX.Y.Z && git push origin vX.Y.Z   # CI builds + publishes the release
 ```
 
-The full local Android build pipeline (Vite → `cap sync` → JDK-21 gradle → renamed `iron-log.apk`) is in `CLAUDE.md`. Latest release: **v1.2.0**.
+The full local Android build pipeline (Vite → `cap sync` → JDK-21 gradle → renamed `iron-log.apk`) is in `CLAUDE.md`. Latest release: **v1.3.0**.

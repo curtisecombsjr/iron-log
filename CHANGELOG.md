@@ -5,6 +5,23 @@ All notable changes to Iron Log are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-08-09
+
+### Changed
+- **Streaks are now strict.** A streak requires consecutive calendar days; a day
+  counts if you trained *or* logged a rest day. Previously a gap of up to two days
+  continued the streak, so a missed day cost nothing and training every other day
+  held a "streak" indefinitely. Curtis: *"strict. keep me honest."*
+- Streak staleness is measured in calendar days rather than a 36-hour window — the
+  streak is alive if the most recent logged day is today or yesterday. The old
+  hour-based test made the answer depend on what time of day you lifted.
+
+### Fixed
+- `calcStreak` crashed when rest days were logged but no workout sessions existed
+  (it read `sessionList[0].date` unguarded). It now reads the combined day list.
+- The streak comment claimed a "36hr grace period" while the code tolerated two
+  days; code and comment now agree.
+
 ## [1.2.0] - 2026-08-09
 
 ### Changed
