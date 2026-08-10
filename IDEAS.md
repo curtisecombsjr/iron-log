@@ -95,5 +95,8 @@ value to how Curtis trains (6 days/week, progression-focused, data local-only).
 - ~~**Possible rest-timer double-bing.**~~ **FIXED in 1.2.0** — the background path
   proved reliable, so the foreground catch-up `beep()` is now web-only. Native
   relies on the notification's `bell.wav` alone.
-- **Backdate the lost workout from ~2026-07-28** (forgotten save, shows as a heatmap
-  gap) so the streak is honest. Offered, not yet done.
+- ~~**Backdate the lost workout from ~2026-07-28**~~ **DONE.** Curtis filled it in
+  himself using the tappable heatmap cells (`toggleRestDay`, shipped 2026-05-17,
+  commit 8d7ef4b) — non-workout, non-future cells toggle rest-day status on tap.
+  This note sat here as "not yet done" long after the fact and caused me to ask
+  Curtis about it again on 2026-08-09. Close threads when they close.
