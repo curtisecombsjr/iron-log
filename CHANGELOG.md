@@ -5,6 +5,22 @@ All notable changes to Iron Log are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-08-09
+
+### Changed
+- **Rest timer no longer double-rings.** Returning to the app after the timer
+  expired in the background used to sound a second bell: the scheduled Android
+  notification had already played `bell.wav`, then the foreground catch-up
+  handler played its own `beep()` on top. The catch-up bell is now web-only,
+  where no notification exists to ring.
+
+### Verified
+- **Background rest-timer reliability confirmed** over a week of real workouts.
+  The Doze-proof `allowWhileIdle` alarms, draft persistence, and unsaved-workout
+  reminder shipped in 1.1.0 all behave as intended on device. This is what the
+  double-ring fix above was waiting on — the foreground beep had been kept
+  deliberately as a fallback until the background path proved itself.
+
 ## [1.1.0] - 2026-08-07
 
 ### Added

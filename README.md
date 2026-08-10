@@ -77,3 +77,23 @@ Opens at `http://localhost:5173`
 ```bash
 npm run build
 ```
+
+## Development & Releases
+
+This repo follows a simple git flow:
+
+- **`develop`** — integration branch; day-to-day work lands here.
+- **`main`** — release branch; only merged into from `develop` for a release.
+- **Tags** — a `vX.Y.Z` tag on `main` marks a release.
+
+**CI** (`.github/workflows/build.yml`) builds the Android APK on every push to `develop`/`main` and on PRs to `develop`; on a `v*` tag it also publishes a **GitHub Release** with `iron-log.apk` attached.
+
+To cut a release:
+
+```bash
+# on develop: bump versions (package.json + android/app/build.gradle) and update CHANGELOG
+git checkout main && git merge --no-ff develop && git push origin main
+git tag vX.Y.Z && git push origin vX.Y.Z   # CI builds + publishes the release
+```
+
+The full local Android build pipeline (Vite → `cap sync` → JDK-21 gradle → renamed `iron-log.apk`) is in `CLAUDE.md`. Latest release: **v1.2.0**.
