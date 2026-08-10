@@ -88,11 +88,12 @@ value to how Curtis trains (6 days/week, progression-focused, data local-only).
 
 ## Open threads from the 2026-08-02 session
 
-- **Background reliability verdict pending.** Draft persistence + unsaved-workout
-  reminder + `allowWhileIdle` Doze-proof alarms shipped; Curtis is testing over
-  ~a week of real workouts. Confirmed working 3× early.
-- **Possible rest-timer double-bing.** Now that the background notification fires
-  reliably, the foreground catch-up `beep()` may sound a second time on return. Left
-  in as a Doze fallback — mute it if the background bing proves reliable.
+- ~~**Background reliability verdict pending.**~~ **RESOLVED 2026-08-09** — a week
+  of real workouts confirmed it. Curtis: "background bell works very well now."
+  Draft persistence, unsaved-workout reminder and the Doze-proof `allowWhileIdle`
+  alarms all behave on device.
+- ~~**Possible rest-timer double-bing.**~~ **FIXED in 1.2.0** — the background path
+  proved reliable, so the foreground catch-up `beep()` is now web-only. Native
+  relies on the notification's `bell.wav` alone.
 - **Backdate the lost workout from ~2026-07-28** (forgotten save, shows as a heatmap
   gap) so the streak is honest. Offered, not yet done.

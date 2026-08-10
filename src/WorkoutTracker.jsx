@@ -1238,7 +1238,12 @@ export default function WorkoutTracker() {
         clearInterval(intRef.current);
         setTimerActive(false);
         setTimerRem(0);
-        beep();
+        // On native the scheduled notification has ALREADY rung bell.wav while we were
+        // backgrounded, so beeping here rings a second time the moment you look at the phone
+        // -- the "double-bing". The catch-up beep only exists for web, where there is no
+        // notification to ring. Kept as a Doze fallback until 2026-08-09, when a week of real
+        // workouts confirmed the background bell fires reliably.
+        if(!Capacitor.isNativePlatform()) beep();
       } else {
         setTimerRem(remaining);
       }
