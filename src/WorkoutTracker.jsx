@@ -235,7 +235,7 @@ function ExerciseBlock({ ex, customExercises, T, onUpdateEx, onDeleteEx, onAddSe
   );
 }
 
-function TrendsView({ sessions, T, restDays, toggleRestDay, streak }) {
+function TrendsView({ sessions, T, restDays, deloadDays, cycleDayMark, streak }) {
   // --- Date range (default: last 1 year) ---
   const toDateStr = (d) => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
   const todayStr = toDateStr(new Date());
@@ -505,7 +505,8 @@ function TrendsView({ sessions, T, restDays, toggleRestDay, streak }) {
   // --- Heatmap: last 52 weeks ---
   const heatmapDays = (() => {
     const workoutDays = new Set(sessions.map(s=>toDateStr(new Date(s.date))));
-    const restDaySet  = new Set(restDays);
+    const restDaySet   = new Set(restDays);
+    const deloadDaySet = new Set(deloadDays);
     const days = [];
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -517,7 +518,13 @@ function TrendsView({ sessions, T, restDays, toggleRestDay, streak }) {
     const cur = new Date(start);
     while(cur <= today) {
       const str = toDateStr(cur);
-      days.push({ date: str, active: workoutDays.has(str), rest: restDaySet.has(str) && !workoutDays.has(str), future: cur > today });
+      days.push({
+        date: str,
+        active: workoutDays.has(str),
+        rest:   restDaySet.has(str)   && !workoutDays.has(str),
+        deload: deloadDaySet.has(str) && !workoutDays.has(str),
+        future: cur > today,
+      });
       cur.setDate(cur.getDate()+1);
     }
     return days;
@@ -557,7 +564,9 @@ function TrendsView({ sessions, T, restDays, toggleRestDay, streak }) {
   // Longest streak — same STRICT consecutive-day rule as the current-streak calc.
   const longestStreak = (()=>{
     const tds = d => new Date(d).toLocaleDateString("en-US");
-    const daySet = new Set([...sessions.map(s=>tds(s.date)), ...restDays.map(d=>tds(d+"T00:00:00"))]);
+    const daySet = new Set([...sessions.map(s=>tds(s.date)),
+                            ...restDays.map(d=>tds(d+"T00:00:00")),
+                            ...deloadDays.map(d=>tds(d+"T00:00:00"))]);
     const days = [...daySet].map(d=>new Date(d)).sort((a,b)=>a-b);
     if(!days.length) return 0;
     let best=1, run=1;
@@ -674,18 +683,23 @@ function TrendsView({ sessions, T, restDays, toggleRestDay, streak }) {
               {heatmapWeeks.map((week,wi)=>(
                 <div key={wi} style={{display:"flex",flexDirection:"column",gap:2,marginRight:2}}>
                   {week.map((day,di)=>{
-                    const tappable = !day.future && !day.active && toggleRestDay;
+                    // Tapping a non-workout cell cycles: blank -> rest -> deload -> blank.
+                    // Deliberately no button anywhere in the app for deload -- Curtis marks them
+                    // by tapping the blocks (2026-08-09).
+                    const tappable = !day.future && !day.active && cycleDayMark;
                     const titleSuffix = day.active ? " — workout"
-                      : day.rest ? " — rest day (tap to remove)"
+                      : day.rest ? " — rest day (tap for deload)"
+                      : day.deload ? " — deload (tap to clear)"
                       : tappable ? " — tap to mark rest" : "";
                     return (
                       <div key={di}
                         title={`${day.date}${titleSuffix}`}
-                        onClick={tappable ? ()=>toggleRestDay(day.date) : undefined}
+                        onClick={tappable ? ()=>cycleDayMark(day.date) : undefined}
                         style={{
                           width:12,height:12,borderRadius:2,flexShrink:0,
                           background: day.future ? "transparent"
                             : day.active ? T.accent
+                            : day.deload ? (T.isLight?"#f2c879":"#7a5312")
                             : day.rest ? (T.isLight?"#bfd9f7":"#1e3a6e")
                             : T.isLight ? "#e8e4dd" : T.dimmest,
                           opacity: day.future ? 0 : 1,
@@ -698,12 +712,18 @@ function TrendsView({ sessions, T, restDays, toggleRestDay, streak }) {
               ))}
             </div>
             {/* Legend */}
-            <div style={{display:"flex",alignItems:"center",gap:5,marginTop:8,justifyContent:"flex-end"}}>
-              <span style={{fontSize:10,color:T.dimmer}}>No workout</span>
-              {[T.isLight?"#e8e4dd":T.dimmest, T.isLight?"#bfd9f7":"#1e3a6e", T.accent].map((c,i)=>(
-                <div key={i} style={{width:12,height:12,borderRadius:2,background:c}}/>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginTop:8,justifyContent:"flex-end",flexWrap:"wrap"}}>
+              {[
+                {c: T.isLight?"#e8e4dd":T.dimmest,   label:"None"},
+                {c: T.isLight?"#bfd9f7":"#1e3a6e",   label:"Rest day"},
+                {c: T.isLight?"#f2c879":"#7a5312",   label:"Deload"},
+                {c: T.accent,                        label:"Workout"},
+              ].map(({c,label})=>(
+                <div key={label} style={{display:"flex",alignItems:"center",gap:4}}>
+                  <div style={{width:10,height:10,borderRadius:2,background:c,flexShrink:0}}/>
+                  <span style={{fontSize:10,color:T.dimmer}}>{label}</span>
+                </div>
               ))}
-              <span style={{fontSize:10,color:T.dimmer}}>Workout</span>
             </div>
           </div>
         </div>
@@ -940,6 +960,9 @@ export default function WorkoutTracker() {
   });
   const [sessions, setSessions] = useState(()=>JSON.parse(localStorage.getItem("wl_sessions2")||"[]"));
   const [restDays, setRestDays] = useState(()=>JSON.parse(localStorage.getItem("wl_rest_days")||"[]"));
+  // Deload days: intentionally lighter training. Marked only by tapping heatmap cells -- Curtis
+  // asked for no button ("i'll just tap the little blocks to tell it").
+  const [deloadDays, setDeloadDays] = useState(()=>JSON.parse(localStorage.getItem("wl_deload_days")||"[]"));
   const [customExercises, setCustomExercises] = useState(()=>JSON.parse(localStorage.getItem("wl_custom_ex")||"{}"));
   const [templates, setTemplates] = useState(()=>JSON.parse(localStorage.getItem("wl_templates")||"[]"));
   const [templateFlash, setTemplateFlash] = useState(null); // 'saved' | 'deleted'
@@ -1093,6 +1116,7 @@ export default function WorkoutTracker() {
   useEffect(()=>{localStorage.setItem("wl_custom_ex",JSON.stringify(customExercises));},[customExercises]);
   useEffect(()=>{localStorage.setItem("wl_templates",JSON.stringify(templates));},[templates]);
   useEffect(()=>{localStorage.setItem("wl_rest_days",JSON.stringify(restDays));},[restDays]);
+  useEffect(()=>{localStorage.setItem("wl_deload_days",JSON.stringify(deloadDays));},[deloadDays]);
 
   // Auto-save snapshot on close/hide
   useEffect(()=>{
@@ -1377,7 +1401,10 @@ export default function WorkoutTracker() {
     const tds = d => new Date(d).toLocaleDateString("en-US");
     const workoutDaySet = new Set(sessionList.map(s=>tds(s.date)));
     const restDaySet = new Set(restDays.map(d=>tds(d+"T00:00:00")));
-    const days = [...new Set([...workoutDaySet, ...restDaySet])];
+    // A deload is programmed training, not a skipped day, so it holds the streak exactly as a
+    // logged rest day does.
+    const deloadDaySet = new Set(deloadDays.map(d=>tds(d+"T00:00:00")));
+    const days = [...new Set([...workoutDaySet, ...restDaySet, ...deloadDaySet])];
     if(!days.length) return 0;
     // Sort descending (most recent first)
     days.sort((a,b)=>new Date(b)-new Date(a));
@@ -1484,12 +1511,21 @@ export default function WorkoutTracker() {
     }
     setTimeout(()=>setRestoreMsg(null),3000);
   };
-  const toggleRestDay=(dateStr)=>{
+  // Tap a heatmap cell to cycle its mark: blank -> rest -> deload -> blank. The two lists are
+  // kept mutually exclusive, so a day is never both.
+  const cycleDayMark=(dateStr)=>{
     const hasWorkout = sessions.some(s=>toDateStr(new Date(s.date))===dateStr);
     if(hasWorkout) return;
-    setRestDays(prev => prev.includes(dateStr)
-      ? prev.filter(d=>d!==dateStr)
-      : [...prev, dateStr]);
+    const isRest = restDays.includes(dateStr);
+    const isDeload = deloadDays.includes(dateStr);
+    if(isRest){                       // rest -> deload
+      setRestDays(prev=>prev.filter(d=>d!==dateStr));
+      setDeloadDays(prev=>[...prev, dateStr]);
+    } else if(isDeload){              // deload -> blank
+      setDeloadDays(prev=>prev.filter(d=>d!==dateStr));
+    } else {                          // blank -> rest
+      setRestDays(prev=>[...prev, dateStr]);
+    }
     try{navigator.vibrate&&navigator.vibrate(20);}catch{}
   };
   const timerPct=(timerActive||timerRem<timerBase)?((timerRem/timerBase)*100):100;
@@ -1929,7 +1965,7 @@ export default function WorkoutTracker() {
         )}
 
         {view==="trends"&&(
-          <TrendsView sessions={sessions} T={T} restDays={restDays} toggleRestDay={toggleRestDay} streak={streak}/>
+          <TrendsView sessions={sessions} T={T} restDays={restDays} deloadDays={deloadDays} cycleDayMark={cycleDayMark} streak={streak}/>
         )}
       </div>
     </div>

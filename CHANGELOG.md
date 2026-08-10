@@ -5,6 +5,20 @@ All notable changes to Iron Log are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-08-09
+
+### Added
+- **Deload days.** Tapping a heatmap cell now cycles blank → rest day → deload →
+  blank. Deliberately no button and no auto-detection — deloads are designated by
+  tapping the blocks, nothing else.
+- Deload days hold a streak the same way a logged rest day does: a deload is
+  programmed training, not a skipped day.
+
+### Changed
+- The frequency heatmap legend now labels every state — None / Rest day / Deload /
+  Workout — instead of an unlabelled three-swatch gradient between "No workout"
+  and "Workout", which never said what the blue squares meant.
+
 ## [1.3.0] - 2026-08-09
 
 ### Changed
