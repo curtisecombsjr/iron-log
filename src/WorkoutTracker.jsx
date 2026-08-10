@@ -554,7 +554,7 @@ function TrendsView({ sessions, T, restDays, toggleRestDay, streak }) {
   const rangeSpanDays = Math.max(1, Math.round((new Date(rangeEnd)-new Date(rangeStart))/864e5)+1);
   const avgPerWeek = rangeWorkouts>0 ? rangeWorkouts/(rangeSpanDays/7) : 0;
 
-  // Longest streak — same "gap ≤ 2 days continues" rule as the current-streak calc.
+  // Longest streak — same STRICT consecutive-day rule as the current-streak calc.
   const longestStreak = (()=>{
     const tds = d => new Date(d).toLocaleDateString("en-US");
     const daySet = new Set([...sessions.map(s=>tds(s.date)), ...restDays.map(d=>tds(d+"T00:00:00"))]);
@@ -563,7 +563,7 @@ function TrendsView({ sessions, T, restDays, toggleRestDay, streak }) {
     let best=1, run=1;
     for(let i=1;i<days.length;i++){
       const diff=(days[i]-days[i-1])/864e5;
-      run = diff<=2 ? run+1 : 1;
+      run = diff<=1 ? run+1 : 1;
       if(run>best) best=run;
     }
     return best;
@@ -1361,22 +1361,34 @@ export default function WorkoutTracker() {
     return `${groups[0]}, ${groups[1]} & more`;
   };
 
-  // --- Streak calculation (36hr grace period) ---
+  // --- Streak calculation (STRICT: consecutive calendar days) ---
+  //
+  // A day counts if you trained OR logged a rest day. Miss a day without logging it and the
+  // streak ends -- that is the point. Curtis, 2026-08-09: "strict. keep me honest."
+  //
+  // This used to allow a gap of up to 2 days, which meant training every other day held a
+  // "streak" indefinitely and a missed day cost nothing. The old comment said "36hr grace
+  // period" while the loop actually tolerated 2 days, so the code and the comment disagreed.
+  //
+  // Staleness is now measured in CALENDAR days, not hours: the streak is alive if the most
+  // recent logged day is today or yesterday (you still have today to train). The old 36-hour
+  // window made the answer depend on the time of day you happened to lift.
   const calcStreak = (sessionList) => {
-    if(!sessionList.length && !restDays.length) return 0;
     const tds = d => new Date(d).toLocaleDateString("en-US");
     const workoutDaySet = new Set(sessionList.map(s=>tds(s.date)));
     const restDaySet = new Set(restDays.map(d=>tds(d+"T00:00:00")));
     const days = [...new Set([...workoutDaySet, ...restDaySet])];
-    // Sort descending
+    if(!days.length) return 0;
+    // Sort descending (most recent first)
     days.sort((a,b)=>new Date(b)-new Date(a));
-    // Check if most recent session is within 36 hours
-    const lastDate = new Date(sessionList[0].date);
-    if(Date.now()-lastDate.getTime() > 36*3600*1000) return 0;
+    // Alive only if the latest logged day is today or yesterday. Reads days[0] rather than
+    // sessionList[0]: with rest days logged but no sessions, sessionList[0].date threw.
+    const today = new Date(tds(Date.now()));
+    if((today-new Date(days[0]))/864e5 > 1) return 0;
     let streak=1;
     for(let i=0;i<days.length-1;i++){
       const diff=(new Date(days[i])-new Date(days[i+1]))/864e5;
-      if(diff<=2) streak++; else break;
+      if(diff<=1) streak++; else break;
     }
     return streak;
   };
