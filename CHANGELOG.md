@@ -5,6 +5,23 @@ All notable changes to Iron Log are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-08-11
+
+### Added
+- **Deload days can be marked on days you actually trained.** A deload is a workout
+  at half weight, so the heatmap now lets you tap a *workout* day to mark it as a
+  deload — previously `cycleDayMark` refused any day with a session logged, which
+  meant the deload mark only worked on days you did not train.
+- The heatmap now draws deload *ahead of* workout. A deload day has a session, so
+  testing "is it a workout" first always won and the amber never appeared.
+
+### Changed
+- **Volume Trend shows one muscle group at a time.** It was a set of hidden groups,
+  so any number could be displayed together. Volume is not comparable across body
+  parts — putting shoulders and arms on one axis invites a meaningless comparison.
+  Selecting a group now switches to it. If the date range no longer contains the
+  selected group, it falls back to one that has data instead of rendering empty.
+
 ## [1.4.0] - 2026-08-09
 
 ### Added
