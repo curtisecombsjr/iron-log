@@ -447,6 +447,8 @@ function TrendsView({ sessions, T, restDays, deloadDays, cycleDayMark, streak })
     const yTicks = 4;
     const yTickVals = Array.from({length: yTicks+1}, (_, i) => maxV * i / yTicks);
     const fmtK = v => v >= 1000 ? `${(v/1000).toFixed(1)}k` : Math.round(v).toString();
+    // A bin whose end date has not arrived yet is incomplete, so it is not comparable to the rest.
+    const lastBinIsPartial = bins.length > 1 && bins[bins.length-1].end > todayStr;
     const step = Math.max(1, Math.ceil(bins.length / 6));
     const xLabelIdxs = bins.map((_,i)=>i).filter(i => i % step === 0 || i === bins.length - 1);
 
@@ -464,15 +466,35 @@ function TrendsView({ sessions, T, restDays, deloadDays, cycleDayMark, streak })
           transform={`rotate(-90,10,${H/2})`}>VOLUME</text>
         {visibleMgs.map(mg => {
           const series = byMg[mg];
-          const pts = series.map((v,i) => `${xOf(i)},${yOf(v)}`);
+          // Connect only bins where this group was actually trained. Plotting a 0 for a week you
+          // trained something else dragged the line to the floor and read as "volume collapsed",
+          // when it only meant "no chest day that week" (Curtis, 2026-08-11).
+          const trained = series.map((v,i)=>({v,i})).filter(p => p.v > 0);
+          // The final bin is usually still in progress — at a 1y range these are calendar months,
+          // so on the 11th it holds 11 days against 30-day neighbours and always dips. Draw that
+          // last leg dashed and hollow rather than letting it read as a real decline.
+          const partial = lastBinIsPartial && trained.length > 0 &&
+                          trained[trained.length-1].i === bins.length - 1;
+          const solid = partial ? trained.slice(0, -1) : trained;
+          const line = pts => pts.length > 1 ? `M ${pts.map(p=>`${xOf(p.i)},${yOf(p.v)}`).join(" L ")}` : "";
           return (
             <g key={mg}>
-              <path d={`M ${pts.join(" L ")}`} fill="none" stroke={MC[mg]} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" opacity="0.85"/>
-              {series.map((v,i) => v > 0 ? (
-                <circle key={i} cx={xOf(i)} cy={yOf(v)} r="3" fill={MC[mg]} stroke={T.bg} strokeWidth="1.5">
-                  <title>{mg} — {bins[i].title}: {Math.round(v).toLocaleString()}</title>
-                </circle>
-              ) : null)}
+              {solid.length > 1 && (
+                <path d={line(solid)} fill="none" stroke={MC[mg]} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" opacity="0.85"/>
+              )}
+              {partial && solid.length > 0 && (
+                <path d={line([solid[solid.length-1], trained[trained.length-1]])} fill="none"
+                      stroke={MC[mg]} strokeWidth="2" strokeDasharray="4,3" strokeLinecap="round" opacity="0.5"/>
+              )}
+              {trained.map(({v,i}) => {
+                const isPartial = partial && i === bins.length - 1;
+                return (
+                  <circle key={i} cx={xOf(i)} cy={yOf(v)} r="3"
+                    fill={isPartial ? T.surface : MC[mg]} stroke={isPartial ? MC[mg] : T.bg} strokeWidth="1.5">
+                    <title>{mg} — {bins[i].title}: {Math.round(v).toLocaleString()}{isPartial ? " (still in progress)" : ""}</title>
+                  </circle>
+                );
+              })}
             </g>
           );
         })}
@@ -900,7 +922,7 @@ function TrendsView({ sessions, T, restDays, deloadDays, cycleDayMark, streak })
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:20}}>
         <div style={{marginBottom:14}}>
           <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:4}}>VOLUME TREND</div>
-          <div style={{fontSize:14,color:T.muted}}>Weekly weight × reps — tap a muscle group</div>
+          <div style={{fontSize:14,color:T.muted}}>Weight × reps — tap a muscle group. Dashed = period still in progress.</div>
         </div>
         {/* Toggle chips */}
         {volumeTrend.activeMgs.length > 0 && (

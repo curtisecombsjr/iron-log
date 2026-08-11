@@ -5,6 +5,18 @@ All notable changes to Iron Log are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-08-11
+
+### Fixed
+- **Volume Trend no longer dives at the end of the chart.** The final bin is the
+  current month (or week) and is still filling — on the 11th it held 11 days of
+  volume against complete 30-day months, which read as a collapse. That last leg
+  is now drawn dashed with a hollow point and labelled "still in progress".
+- **The line no longer drops to zero for periods where that muscle group was not
+  trained.** It plotted a 0 and connected through it, so a week of leg days made
+  the chest line appear to crater. Only bins where the group was actually trained
+  are connected now.
+
 ## [1.5.0] - 2026-08-11
 
 ### Added
