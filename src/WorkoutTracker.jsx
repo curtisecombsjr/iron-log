@@ -346,12 +346,16 @@ function TrendsView({ sessions, T, restDays, deloadDays, cycleDayMark, streak })
   })();
 
   // Default to a single muscle group selected — hide every active group except the first.
-  const [hiddenMgs, setHiddenMgs] = useState(() => new Set(volumeTrend.activeMgs.slice(1)));
-  const toggleMg = mg => setHiddenMgs(prev => {
-    const next = new Set(prev);
-    next.has(mg) ? next.delete(mg) : next.add(mg);
-    return next;
-  });
+  // ONE muscle group at a time. Volume per body part is not comparable across groups -- seeing
+  // shoulders and arms on the same axis invites a comparison that means nothing (Curtis,
+  // 2026-08-11). This used to be a set of HIDDEN groups, so any number could be shown at once.
+  const [selectedMg, setSelectedMg] = useState(() => volumeTrend.activeMgs[0] || null);
+  // If the date range changes and the selected group has no volume in it, fall back to the first
+  // group that does, otherwise the chart silently renders empty.
+  const activeMg = volumeTrend.activeMgs.includes(selectedMg)
+    ? selectedMg
+    : (volumeTrend.activeMgs[0] || null);
+  const hiddenMgs = new Set(volumeTrend.activeMgs.filter(mg => mg !== activeMg));
 
   // Generic SVG line chart
   function LineChart({ data, color, yLabel }) {
@@ -522,7 +526,7 @@ function TrendsView({ sessions, T, restDays, deloadDays, cycleDayMark, streak })
         date: str,
         active: workoutDays.has(str),
         rest:   restDaySet.has(str)   && !workoutDays.has(str),
-        deload: deloadDaySet.has(str) && !workoutDays.has(str),
+        deload: deloadDaySet.has(str),
         future: cur > today,
       });
       cur.setDate(cur.getDate()+1);
@@ -686,10 +690,11 @@ function TrendsView({ sessions, T, restDays, deloadDays, cycleDayMark, streak })
                     // Tapping a non-workout cell cycles: blank -> rest -> deload -> blank.
                     // Deliberately no button anywhere in the app for deload -- Curtis marks them
                     // by tapping the blocks (2026-08-09).
-                    const tappable = !day.future && !day.active && cycleDayMark;
-                    const titleSuffix = day.active ? " — workout"
+                    // Workout days are tappable too now — that is how a deload gets marked.
+                    const tappable = !day.future && cycleDayMark;
+                    const titleSuffix = day.deload ? (day.active ? " — deload workout (tap to clear)" : " — deload (tap to clear)")
+                      : day.active ? " — workout (tap to mark deload)"
                       : day.rest ? " — rest day (tap for deload)"
-                      : day.deload ? " — deload (tap to clear)"
                       : tappable ? " — tap to mark rest" : "";
                     return (
                       <div key={di}
@@ -697,9 +702,11 @@ function TrendsView({ sessions, T, restDays, deloadDays, cycleDayMark, streak })
                         onClick={tappable ? ()=>cycleDayMark(day.date) : undefined}
                         style={{
                           width:12,height:12,borderRadius:2,flexShrink:0,
+                          // Deload is checked BEFORE workout: a deload day has a session logged,
+                          // so testing `active` first would always win and the amber never showed.
                           background: day.future ? "transparent"
-                            : day.active ? T.accent
                             : day.deload ? (T.isLight?"#f2c879":"#7a5312")
+                            : day.active ? T.accent
                             : day.rest ? (T.isLight?"#bfd9f7":"#1e3a6e")
                             : T.isLight ? "#e8e4dd" : T.dimmest,
                           opacity: day.future ? 0 : 1,
@@ -893,15 +900,15 @@ function TrendsView({ sessions, T, restDays, deloadDays, cycleDayMark, streak })
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:20}}>
         <div style={{marginBottom:14}}>
           <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:4}}>VOLUME TREND</div>
-          <div style={{fontSize:14,color:T.muted}}>Weekly weight × reps — tap a muscle group to toggle</div>
+          <div style={{fontSize:14,color:T.muted}}>Weekly weight × reps — tap a muscle group</div>
         </div>
         {/* Toggle chips */}
         {volumeTrend.activeMgs.length > 0 && (
           <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14}}>
             {volumeTrend.activeMgs.map(mg => {
-              const off = hiddenMgs.has(mg);
+              const off = mg !== activeMg;
               return (
-                <button key={mg} onClick={()=>toggleMg(mg)}
+                <button key={mg} onClick={()=>setSelectedMg(mg)}
                   style={{display:"flex",alignItems:"center",gap:6,padding:"4px 10px",borderRadius:14,
                     background:off?"transparent":MC[mg]+"22",
                     border:`1px solid ${off?T.border:MC[mg]+"66"}`,
@@ -1515,7 +1522,15 @@ export default function WorkoutTracker() {
   // kept mutually exclusive, so a day is never both.
   const cycleDayMark=(dateStr)=>{
     const hasWorkout = sessions.some(s=>toDateStr(new Date(s.date))===dateStr);
-    if(hasWorkout) return;
+    const isDeload0 = deloadDays.includes(dateStr);
+    // A deload IS a workout, just at half weight (Curtis, 2026-08-09), so a day with a session
+    // logged must still be markable as a deload. Only the REST mark is meaningless on a training
+    // day, so on those days the cycle is simply workout <-> deload.
+    if(hasWorkout){
+      setDeloadDays(prev => isDeload0 ? prev.filter(d=>d!==dateStr) : [...prev, dateStr]);
+      try{navigator.vibrate&&navigator.vibrate(20);}catch{}
+      return;
+    }
     const isRest = restDays.includes(dateStr);
     const isDeload = deloadDays.includes(dateStr);
     if(isRest){                       // rest -> deload
