@@ -163,12 +163,18 @@ def main() -> int:
         sh(args.serial, "input", "tap", str(x), str(TAB_Y))
         time.sleep(SETTLE + 0.5)
         page = capture_page(args.serial, w, h)
-        full = os.path.join(args.out, f"{name}-full.png")
-        page.save(full)
         scale = args.width / page.width
-        page.resize((args.width, int(page.height * scale)),
-                    Image.LANCZOS).save(os.path.join(args.out, f"{name}.png"))
-        print(f"    saved {name}.png ({args.width}x{int(page.height*scale)})")
+        tall = page.resize((args.width, int(page.height * scale)), Image.LANCZOS)
+
+        # Two shapes, because they do different jobs in the README:
+        #   <name>.png       one viewport — the preview that goes up top
+        #   <name>-full.png  the whole scrolled page — folded away below
+        view_h = round(h * scale)
+        tall.crop((0, 0, args.width, min(view_h, tall.height))).save(
+            os.path.join(args.out, f"{name}.png"))
+        tall.save(os.path.join(args.out, f"{name}-full.png"))
+        print(f"    saved {name}.png ({args.width}x{min(view_h, tall.height)})"
+              f" + {name}-full.png ({args.width}x{tall.height})")
     return 0
 
 

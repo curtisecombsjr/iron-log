@@ -4,9 +4,12 @@ A fast, mobile-first weightlifting tracker. Log workouts, track progress, and
 analyse trends — all from your phone, with no account and no server.
 
 <div align="center">
-  <img src="docs/img/screenshots/workout.png" width="250" alt="Workout logging with rest timer">
-  <img src="docs/img/screenshots/history.png" width="250" alt="Session history">
+  <img src="docs/img/screenshots/workout.png" width="240" alt="Workout logging with rest timer">
+  <img src="docs/img/screenshots/history.png" width="240" alt="Session history">
+  <img src="docs/img/screenshots/trends.png" width="240" alt="Trends dashboard">
 </div>
+
+<div align="center"><sub><b>Workout</b> · <b>History</b> · <b>Trends</b></sub></div>
 
 ---
 
@@ -162,16 +165,30 @@ Full change history is in [CHANGELOG.md](CHANGELOG.md). Current version:
 ---
 
 <details>
-<summary><b>More screenshots</b> — the full Trends dashboard (click to expand)</summary>
+<summary><b>More screenshots</b> — each tab scrolled end to end (click to expand)</summary>
 
 <br>
 
-The whole page, top to bottom: frequency heatmap, date range, overview tiles,
-consistency, muscle balance, last trained, strength progress, volume trend, and
-the all-time records board.
+**Trends** — the whole dashboard: frequency heatmap (rest days and deloads
+included), date range, overview tiles, consistency, muscle balance, last
+trained, strength progress, volume trend, and the all-time records board.
 
 <div align="center">
-  <img src="docs/img/screenshots/trends.png" width="300" alt="Full trends dashboard">
+  <img src="docs/img/screenshots/trends-full.png" width="260" alt="Full trends dashboard">
+</div>
+
+**Workout** — the rest timer, then one card per exercise: muscle-group chips,
+exercise picker, `LAST MAX`, and per-set weight/reps with last-time hints.
+
+<div align="center">
+  <img src="docs/img/screenshots/workout-full.png" width="260" alt="Full workout tab">
+</div>
+
+**History** — the range filter, then one block per session with every exercise
+and set.
+
+<div align="center">
+  <img src="docs/img/screenshots/history-full.png" width="260" alt="Full history tab">
 </div>
 
 </details>
