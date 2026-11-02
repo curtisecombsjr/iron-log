@@ -8,9 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- **The rest-timer face floats.** The ring and countdown now sit in a round button at the
-  bottom-right of the Workout view and stay on screen while you scroll; tap it to start or
-  stop. Presets, the custom time, Start/Stop and reset stay in the Rest Timer card.
+- **A floating rest timer while you rest.** While the timer runs, its ring and countdown also
+  float in a round button at the bottom-right of the Workout view and stay on screen while you
+  scroll; it disappears when time is up or you stop it (tap it to stop).
 
 ### Fixed
 - **Ending a workout cancels the rest timer.** Save Workout and Clear now stop the countdown

@@ -1690,8 +1690,9 @@ export default function WorkoutTracker() {
         </div>
       )}
 
-      {/* Floating rest-timer face: stays on screen over the workout view; tap = start/stop (Curtis 2026-11-01) */}
-      {view==="log"&&(
+      {/* Floating rest-timer face: shown only while the timer runs, over the workout view; tap = stop (Curtis 2026-11-01:
+          "it should appear when it's timing and disappear after its up") */}
+      {view==="log"&&timerActive&&(
         <button onClick={timerActive?stopTimer:startTimer} aria-label={timerActive?"Stop rest timer":"Start rest timer"}
           style={{position:"fixed",right:16,bottom:"calc(16px + env(safe-area-inset-bottom, 0px))",zIndex:50,width:84,height:84,borderRadius:"50%",padding:0,cursor:"pointer",background:T.surface,border:`1px solid ${T.border}`,boxShadow:"0 4px 16px rgba(0,0,0,0.3)",display:"flex",alignItems:"center",justifyContent:"center",outline:"none"}}>
           <div style={{position:"relative",width:72,height:72}}>
@@ -1732,7 +1733,7 @@ export default function WorkoutTracker() {
         </div>
       </div>
 
-      <div style={{maxWidth:660,margin:"0 auto",padding:`20px 16px ${view==="log"?120:80}px`}}>
+      <div style={{maxWidth:660,margin:"0 auto",padding:`20px 16px ${view==="log"&&timerActive?120:80}px`}}>
 
         {view==="log"&&(
           <div className="fade" style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -1741,6 +1742,19 @@ export default function WorkoutTracker() {
             <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:16}}>
               <div style={{fontSize:12,letterSpacing:"0.16em",color:T.dimmer,textTransform:"uppercase",marginBottom:12}}>REST TIMER</div>
               <div style={{display:"flex",alignItems:"center",gap:16}}>
+                <div style={{position:"relative",width:72,height:72,flexShrink:0}}>
+                  <svg width="72" height="72" style={{transform:"rotate(-90deg)"}}>
+                    <circle cx="36" cy="36" r="30" fill="none" stroke={T.border} strokeWidth="5"/>
+                    <circle className="timer-ring" cx="36" cy="36" r="30" fill="none"
+                      stroke={timerRem===0?"#ef4444":timerActive?T.timerActive:T.timerIdle}
+                      strokeWidth="5" strokeLinecap="round"
+                      strokeDasharray={`${2*Math.PI*30}`}
+                      strokeDashoffset={`${2*Math.PI*30*(1-timerPct/100)}`}/>
+                  </svg>
+                  <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.fontDisplay,fontSize:22,color:timerRem===0?"#ef4444":T.textPrimary}}>
+                    {fmt(timerActive||timerRem<timerBase?timerRem:timerInput)}
+                  </div>
+                </div>
                 <div style={{flex:1,display:"flex",flexDirection:"column",gap:8}}>
                   <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                     {[45,60,90,120,180].map(s=>(
