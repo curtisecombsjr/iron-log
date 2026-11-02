@@ -5,6 +5,17 @@ All notable changes to Iron Log are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **The rest-timer face floats.** The ring and countdown now sit in a round button at the
+  bottom-right of the Workout view and stay on screen while you scroll; tap it to start or
+  stop. Presets, the custom time, Start/Stop and reset stay in the Rest Timer card.
+
+### Fixed
+- **Ending a workout cancels the rest timer.** Save Workout and Clear now stop the countdown
+  and cancel the scheduled bell notification, so it no longer rings after you're done.
+
 ## [1.5.1] - 2026-08-11
 
 ### Fixed
