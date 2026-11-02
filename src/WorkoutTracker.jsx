@@ -75,6 +75,9 @@ function SetRow({ set, idx, onUpdate, onDelete, T, onRestartTimer }) {
     clearTimeout(delTimer.current);
     delTimer.current = setTimeout(()=>setConfirmDel(false), 3000);
   };
+  // The check box only works once weight AND reps are filled in (Curtis 2026-11-01); unchecking always works.
+  const filled = String(set.weight??"").trim()!=="" && String(set.reps??"").trim()!=="";
+  const canCheck = done || filled;
   return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.borderSubtle}`,opacity:done?0.5:1,transition:"opacity 0.2s"}}>
       <span style={{fontFamily:T.fontDisplay,fontSize:18,color:T.timerIdle,width:20,textAlign:"center",flexShrink:0}}>{idx+1}</span>
@@ -90,9 +93,9 @@ function SetRow({ set, idx, onUpdate, onDelete, T, onRestartTimer }) {
           style={{width:64,padding:"6px 10px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:T.fontMono,outline:"none",textDecoration:done?"line-through":"none",cursor:done?"not-allowed":"text"}}/>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
-        <button onClick={()=>{ const nowDone=!done; onUpdate({...set,done:nowDone}); if(nowDone){ onRestartTimer?.(); try{navigator.vibrate&&navigator.vibrate(40);}catch{} } }}
-          style={{width:26,height:26,borderRadius:6,border:`2px solid ${done?T.accent:T.border}`,background:done?T.accent:"transparent",cursor:"pointer",outline:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s",padding:0}}
-          title={done?"Mark incomplete":"Mark complete"}>
+        <button disabled={!canCheck} onClick={()=>{ if(!canCheck) return; const nowDone=!done; onUpdate({...set,done:nowDone}); if(nowDone){ onRestartTimer?.(); try{navigator.vibrate&&navigator.vibrate(40);}catch{} } }}
+          style={{width:26,height:26,borderRadius:6,border:`2px solid ${done?T.accent:T.border}`,background:done?T.accent:"transparent",cursor:canCheck?"pointer":"not-allowed",opacity:canCheck?1:0.35,outline:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s",padding:0}}
+          title={done?"Mark incomplete":canCheck?"Mark complete":"Enter weight and reps first"}>
           {done&&<span style={{color:T.isLight?"#fff":T.accentText,fontSize:14,lineHeight:1,fontWeight:"bold"}}>✓</span>}
         </button>
         <button onClick={handleDel}

@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scroll; it disappears when time is up or you stop it (tap it to stop).
 
 ### Fixed
+- **A set can only be checked off once weight and reps are both filled in.** The check box
+  stays dimmed until then; unchecking a done set always works.
 - **Ending a workout cancels the rest timer.** Save Workout and Clear now stop the countdown
   and cancel the scheduled bell notification, so it no longer rings after you're done.
 
