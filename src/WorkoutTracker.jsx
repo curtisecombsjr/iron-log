@@ -600,7 +600,7 @@ function TrendsView({ sessions, T, restDays, deloadDays, cycleDayMark, streak })
     if(!days.length) return 0;
     let best=1, run=1;
     for(let i=1;i<days.length;i++){
-      const diff=(days[i]-days[i-1])/864e5;
+      const diff=Math.round((days[i]-days[i-1])/864e5);  // DST-safe (see calcStreak)
       run = diff<=1 ? run+1 : 1;
       if(run>best) best=run;
     }
@@ -1461,10 +1461,12 @@ export default function WorkoutTracker() {
     // Alive only if the latest logged day is today or yesterday. Reads days[0] rather than
     // sessionList[0]: with rest days logged but no sessions, sessionList[0].date threw.
     const today = new Date(tds(Date.now()));
-    if((today-new Date(days[0]))/864e5 > 1) return 0;
+    if(Math.round((today-new Date(days[0]))/864e5) > 1) return 0;
     let streak=1;
     for(let i=0;i<days.length-1;i++){
-      const diff=(new Date(days[i])-new Date(days[i+1]))/864e5;
+      // Math.round: the fall-back day is 25 h long, so a raw /864e5 gives 1.04 and broke the streak
+      // every November (Curtis 2026-11-03: "stuck at 1").
+      const diff=Math.round((new Date(days[i])-new Date(days[i+1]))/864e5);
       if(diff<=1) streak++; else break;
     }
     return streak;

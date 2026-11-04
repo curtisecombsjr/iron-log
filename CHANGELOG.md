@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scroll; it disappears when time is up or you stop it (tap it to stop).
 
 ### Fixed
+- **The streak flame no longer resets when the clocks fall back.** The day the clocks change is
+  25 hours long, so the streak math read it as a skipped day and dropped back to 1 every
+  November. Day gaps are now counted as whole calendar days.
 - **The floating rest timer no longer pops up under your thumb.** Checking off a set while the
   keyboard was open made the timer appear just above the keyboard, then jump to the corner as the
   keyboard closed. Checking a set now closes the keyboard, and the timer fades in at the
