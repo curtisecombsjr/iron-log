@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scroll; it disappears when time is up or you stop it (tap it to stop).
 
 ### Fixed
+- **The floating rest timer no longer pops up under your thumb.** Checking off a set while the
+  keyboard was open made the timer appear just above the keyboard, then jump to the corner as the
+  keyboard closed. Checking a set now closes the keyboard, and the timer fades in at the
+  bottom-right only once the keyboard is gone.
 - **A set can only be checked off once weight and reps are both filled in.** The check box
   stays dimmed until then; unchecking a done set always works.
 - **Ending a workout cancels the rest timer.** Save Workout and Clear now stop the countdown

@@ -93,7 +93,7 @@ function SetRow({ set, idx, onUpdate, onDelete, T, onRestartTimer }) {
           style={{width:64,padding:"6px 10px",borderRadius:5,background:T.surfaceDeep,border:`1px solid ${T.border}`,color:T.textPrimary,fontSize:16,textAlign:"center",fontFamily:T.fontMono,outline:"none",textDecoration:done?"line-through":"none",cursor:done?"not-allowed":"text"}}/>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
-        <button disabled={!canCheck} onClick={()=>{ if(!canCheck) return; const nowDone=!done; onUpdate({...set,done:nowDone}); if(nowDone){ onRestartTimer?.(); try{navigator.vibrate&&navigator.vibrate(40);}catch{} } }}
+        <button disabled={!canCheck} onClick={()=>{ if(!canCheck) return; const nowDone=!done; onUpdate({...set,done:nowDone}); if(nowDone){ try{document.activeElement&&document.activeElement.blur&&document.activeElement.blur();}catch{} onRestartTimer?.(); try{navigator.vibrate&&navigator.vibrate(40);}catch{} } }}
           style={{width:26,height:26,borderRadius:6,border:`2px solid ${done?T.accent:T.border}`,background:done?T.accent:"transparent",cursor:canCheck?"pointer":"not-allowed",opacity:canCheck?1:0.35,outline:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.15s",padding:0}}
           title={done?"Mark incomplete":canCheck?"Mark complete":"Enter weight and reps first"}>
           {done&&<span style={{color:T.isLight?"#fff":T.accentText,fontSize:14,lineHeight:1,fontWeight:"bold"}}>✓</span>}
@@ -1138,6 +1138,24 @@ export default function WorkoutTracker() {
   };
 
   const [timerActive, setTimerActive] = useState(false);
+  // Keyboard open? (viewport shrinks well below its tallest). The floating timer waits for the keyboard to close, or it
+  // appears above the keyboard right under the thumb that just checked the set, then jumps to the corner (Curtis 2026-11-03).
+  const [kbOpen, setKbOpen] = useState(false);
+  useEffect(()=>{
+    let maxH=0, t;
+    const h=()=>window.visualViewport?window.visualViewport.height:window.innerHeight;
+    const check=()=>{
+      const cur=h(); maxH=Math.max(maxH,cur);
+      clearTimeout(t);
+      if(cur<maxH-120) setKbOpen(true); else t=setTimeout(()=>setKbOpen(false),250);
+    };
+    const reorient=()=>{ maxH=0; setTimeout(check,400); };
+    check();
+    const vv=window.visualViewport;
+    vv&&vv.addEventListener("resize",check); window.addEventListener("resize",check);
+    window.addEventListener("orientationchange",reorient);
+    return ()=>{ clearTimeout(t); vv&&vv.removeEventListener("resize",check); window.removeEventListener("resize",check); window.removeEventListener("orientationchange",reorient); };
+  },[]);
   const [timerInput, setTimerInput] = useState(60);
   const [timerBase, setTimerBase] = useState(60);
   const [timerRem, setTimerRem] = useState(60);
@@ -1583,6 +1601,7 @@ export default function WorkoutTracker() {
         @keyframes fok{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 2px #22c55e}}
         @keyframes ferr{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 2px #ef4444}}
         .fok{animation:fok 0.5s ease}.ferr{animation:ferr 0.5s ease}
+        @keyframes tfi{from{opacity:0}to{opacity:1}}
         .timer-ring{transition:stroke-dashoffset 1s linear}
         select option{background:${T.selectBg}}
         optgroup{background:${T.selectBg}}
@@ -1695,9 +1714,9 @@ export default function WorkoutTracker() {
 
       {/* Floating rest-timer face: shown only while the timer runs, over the workout view; tap = stop (Curtis 2026-11-01:
           "it should appear when it's timing and disappear after its up") */}
-      {view==="log"&&timerActive&&(
+      {view==="log"&&timerActive&&!kbOpen&&(
         <button onClick={timerActive?stopTimer:startTimer} aria-label={timerActive?"Stop rest timer":"Start rest timer"}
-          style={{position:"fixed",right:16,bottom:"calc(16px + env(safe-area-inset-bottom, 0px))",zIndex:50,width:84,height:84,borderRadius:"50%",padding:0,cursor:"pointer",background:T.surface,border:`1px solid ${T.border}`,boxShadow:"0 4px 16px rgba(0,0,0,0.3)",display:"flex",alignItems:"center",justifyContent:"center",outline:"none"}}>
+          style={{position:"fixed",right:16,bottom:"calc(16px + env(safe-area-inset-bottom, 0px))",zIndex:50,width:84,height:84,borderRadius:"50%",animation:"tfi 0.2s ease",padding:0,cursor:"pointer",background:T.surface,border:`1px solid ${T.border}`,boxShadow:"0 4px 16px rgba(0,0,0,0.3)",display:"flex",alignItems:"center",justifyContent:"center",outline:"none"}}>
           <div style={{position:"relative",width:72,height:72}}>
                   <svg width="72" height="72" style={{transform:"rotate(-90deg)"}}>
                     <circle cx="36" cy="36" r="30" fill="none" stroke={T.border} strokeWidth="5"/>
